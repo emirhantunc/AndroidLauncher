@@ -1,4 +1,4 @@
-package com.tunc.androidlauncher.ui.screens.appdrawer.helper
+package com.tunc.androidlauncher.core
 
 import android.graphics.Bitmap
 import android.graphics.Canvas

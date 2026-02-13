@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SettingsIcon(modifier: Modifier = Modifier, primary: Color) {
+fun SettingsIcon(primary: Color) {
     Box(
         modifier = Modifier
             .size(50.dp)

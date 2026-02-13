@@ -19,11 +19,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.tunc.androidlauncher.core.models.AppInfo
-import com.tunc.androidlauncher.ui.screens.appdrawer.helper.toBitmap
+import com.tunc.androidlauncher.core.toBitmap
 
 @Composable
 fun AppItem(app: AppInfo, bgColor: Color) {
@@ -38,14 +37,15 @@ fun AppItem(app: AppInfo, bgColor: Color) {
                 .background(bgColor),
             contentAlignment = Alignment.Center
         ) {
-            if (app.icon != null) {
-                Image(
-                    bitmap = app.icon.toBitmap().asImageBitmap(),
-                    contentDescription = app.label,
+            app.icon?.let { icon ->
+                AsyncImage(
+                    model = icon,
+                    contentDescription = app.name,
                     modifier = Modifier.size(40.dp)
                 )
-            } else {
+            } ?: run {
                 Text(app.label.take(1), color = Color.White, fontWeight = FontWeight.Bold)
+
             }
         }
 

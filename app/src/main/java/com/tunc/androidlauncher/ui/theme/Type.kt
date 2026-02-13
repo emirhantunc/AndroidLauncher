@@ -3,6 +3,7 @@ package com.tunc.androidlauncher.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -12,6 +13,27 @@ import androidx.compose.ui.unit.sp
 
 val AppFont = FontFamily.Default
 val Typography = Typography(
+
+    displayLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Thin,
+        fontSize = 72.sp,
+        lineHeight = 72.sp,
+        letterSpacing = (-3).sp,
+        platformStyle = PlatformTextStyle(
+            includeFontPadding = false
+        )
+    ),
+    titleMedium = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 13.sp,
+        lineHeight = 13.sp,
+        letterSpacing = 4.sp,
+        platformStyle = PlatformTextStyle(
+            includeFontPadding = false
+        )
+    ),
     titleSmall = TextStyle(
         fontFamily = AppFont,
         fontWeight = FontWeight.SemiBold,
@@ -35,7 +57,6 @@ val Typography = Typography(
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp
     ),
-
 
     labelMedium = TextStyle(
         fontFamily = AppFont,

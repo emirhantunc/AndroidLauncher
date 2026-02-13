@@ -46,14 +46,12 @@ fun AppDrawer(
         }
     }
 
-    // Her harfin grid'deki index'ini hesapla
     LaunchedEffect(appList) {
         if (appList.isNotEmpty()) {
             var currentIndex = 0
             letterIndexMap.clear()
             appList.forEach { (letter, appsInGroup) ->
                 letterIndexMap[letter] = currentIndex
-                // 1 for header + apps count
                 currentIndex += 1 + appsInGroup.size
             }
         }
@@ -114,7 +112,7 @@ fun AppDrawer(
             onLetterClick = { letter ->
                 letterIndexMap[letter]?.let { index ->
                     coroutineScope.launch {
-                        gridState.animateScrollToItem(index)
+                        gridState.scrollToItem(index)
                     }
                 }
             }
