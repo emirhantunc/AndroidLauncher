@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AndroidLauncher</string>
+    <string name="search_apps_place_holder">Search apps...</string>
+    <string name="recently_used">RECENTLY USED</string>
+</resources>
