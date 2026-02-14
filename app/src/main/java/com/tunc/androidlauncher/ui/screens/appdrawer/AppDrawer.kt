@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.tunc.androidlauncher.core.getInstalledApps
 import com.tunc.androidlauncher.core.models.AppInfo
+import com.tunc.androidlauncher.data.AppLockManager
 import com.tunc.androidlauncher.ui.screens.appdrawer.components.AlphabetSidebar
 import com.tunc.androidlauncher.ui.screens.appdrawer.components.AppItem
 import com.tunc.androidlauncher.ui.screens.appdrawer.components.SearchBarSection
@@ -28,9 +29,11 @@ import kotlin.collections.sortedBy
 
 @Composable
 fun AppDrawer(
-    innerPadding: PaddingValues
+    innerPadding: PaddingValues,
+    onSettingsClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val appLockManager = remember { AppLockManager(context) }
     var appList by remember { mutableStateOf<Map<String, List<AppInfo>>>(emptyMap()) }
     val letterIndexMap = remember { mutableStateMapOf<String, Int>() }
     val gridState = rememberLazyGridState()
@@ -74,7 +77,7 @@ fun AppDrawer(
             ) {
                 SearchBarSection()
 
-                SettingsIcon()
+                SettingsIcon(onClick = onSettingsClick)
             }
 
             LazyVerticalGrid(
@@ -89,7 +92,10 @@ fun AppDrawer(
                         )
                     }
                     items(appsInGroup) { app ->
-                        AppItem(app)
+                        AppItem(
+                            app = app,
+                            appLockManager = appLockManager
+                        )
                     }
                 }
             }
@@ -100,7 +106,7 @@ fun AppDrawer(
             onLetterClick = { letter ->
                 letterIndexMap[letter]?.let { index ->
                     coroutineScope.launch {
-                        gridState.scrollToItem(index)
+                        gridState.scrollToItem(index, scrollOffset = 0)
                     }
                 }
             })

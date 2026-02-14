@@ -7,5 +7,6 @@ data class AppInfo(
     val name: String,
     val label: String,
     val packageName: String,
-    val icon: Drawable?
+    val icon: Drawable?,
+    val notificationCount: Int = 0
 )

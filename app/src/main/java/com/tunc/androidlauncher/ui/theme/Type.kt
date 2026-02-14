@@ -61,7 +61,11 @@ val Typography = Typography(
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp
     ),
-
+    bodyMedium = TextStyle(
+        fontFamily = AppFont,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp
+    ),
     labelMedium = TextStyle(
         fontFamily = AppFont,
         fontSize = 9.sp,

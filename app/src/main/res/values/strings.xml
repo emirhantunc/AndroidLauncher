@@ -36,5 +36,24 @@
     <string name="settings_item_about">About Launcher</string>
     <string name="settings_item_restart">Restart Launcher</string>
 
+    <!-- App Lock Screen -->
+    <string name="app_lock_title">App Lock</string>
+    <string name="app_lock_subtitle">Protect your apps with a PIN</string>
+    <string name="app_lock_set_pin">Set PIN</string>
+    <string name="app_lock_enter_pin">Enter PIN</string>
+    <string name="app_lock_confirm_pin">Confirm PIN</string>
+    <string name="app_lock_change_pin">Change PIN</string>
+    <string name="app_lock_pin_not_set">PIN not set</string>
+    <string name="app_lock_pin_set">PIN is set</string>
+    <string name="app_lock_select_apps">Select apps to lock</string>
+    <string name="app_lock_no_apps_selected">No apps selected</string>
+    <string name="app_lock_apps_selected">%d apps locked</string>
+    <string name="app_lock_enter_current_pin">Enter your current PIN</string>
+    <string name="app_lock_enter_new_pin">Enter new PIN</string>
+    <string name="app_lock_pin_mismatch">PINs do not match</string>
+    <string name="app_lock_pin_too_short">PIN must be at least 4 digits</string>
+    <string name="app_lock_incorrect_pin">Incorrect PIN</string>
+    <string name="app_lock_locked">Locked</string>
+
 
 </resources>

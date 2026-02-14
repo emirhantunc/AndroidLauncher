@@ -16,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tunc.androidlauncher.core.findApp
 import com.tunc.androidlauncher.core.getInstalledApps
 import com.tunc.androidlauncher.core.models.AppInfo
+import com.tunc.androidlauncher.data.AppLockManager
 import com.tunc.androidlauncher.ui.screens.home.components.BottomBar
 import com.tunc.androidlauncher.ui.screens.home.components.HomeGrid
 import com.tunc.androidlauncher.ui.screens.home.components.HomeSearchBar
@@ -35,6 +36,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val appLockManager = remember { AppLockManager(context) }
 
     LaunchedEffect(Unit) {
         viewModel.loadApps(context)
@@ -68,7 +70,8 @@ fun HomeScreen(
                 HomeGrid(
                     apps = gridApps,
                     context = context,
-                    )
+                    appLockManager = appLockManager
+                )
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -76,6 +79,7 @@ fun HomeScreen(
             BottomBar(
                 apps = dockApps,
                 context = context,
+                appLockManager = appLockManager
             )
         }
     }

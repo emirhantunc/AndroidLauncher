@@ -20,7 +20,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,15 +32,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.tunc.androidlauncher.core.models.AppInfo
+import com.tunc.androidlauncher.data.AppLockManager
+import com.tunc.androidlauncher.ui.components.NotificationBadge
+import com.tunc.androidlauncher.ui.screens.launchersettings.applock.components.PinVerificationDialog
 
 
 @Composable
 fun HomeGrid(
     apps: List<AppInfo?>,
     context: Context,
-    modifier: Modifier = Modifier,
-    onSurfaceVariant: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    backGround: Color = MaterialTheme.colorScheme.background
+    appLockManager: AppLockManager? = null,
+    modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -55,8 +57,7 @@ fun HomeGrid(
                 HomeIconItem(
                     app = app,
                     context = context,
-                    onSurfaceVariant = onSurfaceVariant,
-                    backGround = backGround
+                    appLockManager = appLockManager
                 )
             }
         }
@@ -67,14 +68,18 @@ fun HomeGrid(
 private fun HomeIconItem(
     app: AppInfo?,
     context: Context,
-    onSurfaceVariant: Color,
-    backGround: Color,
+    appLockManager: AppLockManager?,
+    onSurfaceVariant: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    backGround: Color = MaterialTheme.colorScheme.background,
     bodySmall: TextStyle = MaterialTheme.typography.bodySmall
 ) {
     if (app == null) {
         Spacer(modifier = Modifier.size(64.dp))
         return
     }
+
+    var showPinDialog by remember { mutableStateOf(false) }
+    val isLocked = appLockManager?.isAppLocked(app.packageName) == true && appLockManager.isPinSet()
 
     Column(
         modifier = Modifier.width(84.dp),
@@ -88,9 +93,13 @@ private fun HomeIconItem(
                 .background(backGround)
                 .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
                 .clickable {
-                    val launchIntent =
-                        context.packageManager.getLaunchIntentForPackage(app.packageName)
-                    launchIntent?.let { context.startActivity(it) }
+                    if (isLocked) {
+                        showPinDialog = true
+                    } else {
+                        val launchIntent =
+                            context.packageManager.getLaunchIntentForPackage(app.packageName)
+                        launchIntent?.let { context.startActivity(it) }
+                    }
                 }, contentAlignment = Alignment.Center
         ) {
             app.icon?.let { icon ->
@@ -98,6 +107,13 @@ private fun HomeIconItem(
                     model = icon,
                     contentDescription = app.name,
                     modifier = Modifier.size(32.dp)
+                )
+            }
+
+            if (app.notificationCount > 0) {
+                NotificationBadge(
+                    count = app.notificationCount,
+                    modifier = Modifier.align(Alignment.TopEnd)
                 )
             }
         }
@@ -113,6 +129,18 @@ private fun HomeIconItem(
             modifier = Modifier
                 .padding(horizontal = 4.dp)
                 .widthIn(max = 70.dp)
+        )
+    }
+
+    if (showPinDialog && appLockManager != null) {
+        PinVerificationDialog(
+            onDismiss = { showPinDialog = false },
+            onPinVerified = {
+                showPinDialog = false
+                val launchIntent = context.packageManager.getLaunchIntentForPackage(app.packageName)
+                launchIntent?.let { context.startActivity(it) }
+            },
+            verifyPin = { pin -> appLockManager.verifyPin(pin) }
         )
     }
 }

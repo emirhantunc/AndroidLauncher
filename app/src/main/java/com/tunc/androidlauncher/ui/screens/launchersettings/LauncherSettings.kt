@@ -1,6 +1,7 @@
 package com.tunc.androidlauncher.ui.screens.launchersettings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,13 +12,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -37,6 +38,8 @@ import com.tunc.androidlauncher.R
 fun LauncherSettings(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
+    onNavigateToAppLock: () -> Unit = {},
+    onBackClick: () -> Unit = {},
     backGroundColor: Color = MaterialTheme.colorScheme.background,
     titleColor: Color = MaterialTheme.colorScheme.onSurface,
     titleLargeStyle: TextStyle = MaterialTheme.typography.titleLarge,
@@ -57,7 +60,13 @@ fun LauncherSettings(
         ) {
             Column(modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = titleColor
+                        )
+                    }
                     Text(
                         text = stringResource(R.string.settings).uppercase(),
                         style = titleLargeStyle.copy(
@@ -100,6 +109,11 @@ fun LauncherSettings(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .clickable {
+                                    if (setting.id == "app_lock") {
+                                        onNavigateToAppLock()
+                                    }
+                                }
                                 .padding(vertical = 12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
