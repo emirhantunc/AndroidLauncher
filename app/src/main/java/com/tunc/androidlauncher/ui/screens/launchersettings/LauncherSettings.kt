@@ -39,13 +39,23 @@ fun LauncherSettings(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
     onNavigateToAppLock: () -> Unit = {},
+    onNavigateToTheme: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onSettingClicked: (String) -> Unit = {},
     backGroundColor: Color = MaterialTheme.colorScheme.background,
     titleColor: Color = MaterialTheme.colorScheme.onSurface,
     titleLargeStyle: TextStyle = MaterialTheme.typography.titleLarge,
     titleMediumStyle: TextStyle = MaterialTheme.typography.titleMedium,
 ) {
     val settingsList = SettingsDataSource.menuData
+
+    val settingClickHandler: (String) -> Unit = { settingId ->
+        onSettingClicked(settingId)
+        when (settingId) {
+            "app_lock" -> onNavigateToAppLock()
+            "theme" -> onNavigateToTheme()
+        }
+    }
 
     Box(
         modifier = modifier
@@ -110,9 +120,7 @@ fun LauncherSettings(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    if (setting.id == "app_lock") {
-                                        onNavigateToAppLock()
-                                    }
+                                    settingClickHandler(setting.id)
                                 }
                                 .padding(vertical = 12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,

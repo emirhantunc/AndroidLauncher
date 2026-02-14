@@ -57,7 +57,7 @@ object SettingsDataSource {
                 ),
                 SettingModel(
                     id = "app_lock",
-                    titleResId = R.string.settings_item_app_lock,
+                    titleResId = R.string.settings_item_app_lock
                 ),
                 SettingModel(
                     id = "secure_vault",

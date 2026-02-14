@@ -1,8 +1,14 @@
 package com.tunc.androidlauncher.navigation
 
 sealed class Screen(val route: String) {
-    object Home : Screen("home")
-    object AppDrawer : Screen("app_drawer")
-    object LauncherSettings : Screen("launcher_settings")
-    object AppLockSettings : Screen("app_lock_settings")
+    data object Home : Screen("home")
+    data object AppDrawer : Screen("app_drawer")
+    data object SettingsGraph : Screen("settings_graph_root")
+
+    sealed class Settings(route: String) : Screen(route) {
+        data object Menu : Settings("settings_menu")
+
+        data object AppLock : Settings("settings_app_lock")
+        data object Theme : Settings("settings_theme")
+    }
 }

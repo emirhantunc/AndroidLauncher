@@ -55,5 +55,15 @@
     <string name="app_lock_incorrect_pin">Incorrect PIN</string>
     <string name="app_lock_locked">Locked</string>
 
+    <!-- Theme Settings -->
+    <string name="theme_settings_title">Theme &amp; Colors</string>
+    <string name="theme_settings_subtitle">Choose your theme preference</string>
+    <string name="theme_light">Light Mode</string>
+    <string name="theme_dark">Dark Mode</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_light_description">Always use light theme</string>
+    <string name="theme_dark_description">Always use dark theme</string>
+    <string name="theme_system_description">Follow system settings</string>
+
 
 </resources>

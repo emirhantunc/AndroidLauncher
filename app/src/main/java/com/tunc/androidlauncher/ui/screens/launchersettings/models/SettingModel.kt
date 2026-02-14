@@ -6,6 +6,5 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 data class SettingModel(
     val id: String,
-    @StringRes val titleResId: Int,
-    val onClicked: () -> Unit = {},
+    @StringRes val titleResId: Int
 )

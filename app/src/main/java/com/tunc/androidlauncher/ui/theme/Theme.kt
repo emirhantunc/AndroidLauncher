@@ -21,15 +21,21 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = TextWhite,
     onSurfaceVariant = TextGray,
     onSecondary = Color(0xFF52525B),
-    outlineVariant =  Color(0xFF27272a)
+    outlineVariant = Color(0xFF27272a),
+    error = Color(0xFFEF4444)
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryBlue,
-    background = BgDark,
-    surface = SurfaceDark,
-    onSurface = TextWhite,
-    onSurfaceVariant = TextGray
+    background = BgLight,
+    onBackground = Slate900,
+    surface = SurfaceLight,
+    onSurface = Slate800,
+    onSurfaceVariant = Slate700,
+    onSecondary = Slate200,
+    outlineVariant = Slate200,
+    error = Color(0xFFDC2626),
+    surfaceVariant = BlueTint
 )
 
 @Composable
