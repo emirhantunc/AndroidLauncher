@@ -39,8 +39,8 @@ fun AppDrawer(
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             val apps = getInstalledApps(context)
-            val grouped = apps.sortedBy { it.label.lowercase() }
-                .groupBy { it.label.first().uppercase() }
+            val grouped =
+                apps.sortedBy { it.label.lowercase() }.groupBy { it.label.first().uppercase() }
 
             appList = grouped
         }
@@ -72,42 +72,30 @@ fun AppDrawer(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                SearchBarSection(
-                    primary = MaterialTheme.colorScheme.primary,
-                    surface = MaterialTheme.colorScheme.surface,
-                    onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant,
-                    onSurface = MaterialTheme.colorScheme.onSurface
-                )
-                SettingsIcon(primary = MaterialTheme.colorScheme.primary)
+                SearchBarSection()
+
+                SettingsIcon()
             }
 
             LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                state = gridState,
-                contentPadding = PaddingValues(
-                    bottom = 20.dp,
-                    start = 16.dp,
-                    end = 28.dp
-                ),
-                modifier = Modifier.fillMaxSize()
+                columns = GridCells.Fixed(4), state = gridState, contentPadding = PaddingValues(
+                    bottom = 20.dp, start = 16.dp, end = 28.dp
+                ), modifier = Modifier.fillMaxSize()
             ) {
                 appList.forEach { (letter, appsInGroup) ->
                     item(span = { GridItemSpan(4) }) {
                         SectionHeader(
-                            letter,
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.surface
+                            letter = letter,
                         )
                     }
                     items(appsInGroup) { app ->
-                        AppItem(app, MaterialTheme.colorScheme.surface)
+                        AppItem(app)
                     }
                 }
             }
         }
         AlphabetSidebar(
             letters = appList.keys.toList(),
-            primaryColor = MaterialTheme.colorScheme.primary,
             modifier = Modifier.align(Alignment.CenterEnd),
             onLetterClick = { letter ->
                 letterIndexMap[letter]?.let { index ->
@@ -115,7 +103,6 @@ fun AppDrawer(
                         gridState.scrollToItem(index)
                     }
                 }
-            }
-        )
+            })
     }
 }

@@ -1,6 +1,6 @@
 package com.tunc.androidlauncher.ui.screens.appdrawer.components
 
-import androidx.compose.foundation.Image
+import android.view.Surface
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,15 +17,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.tunc.androidlauncher.core.models.AppInfo
-import com.tunc.androidlauncher.core.toBitmap
 
 @Composable
-fun AppItem(app: AppInfo, bgColor: Color) {
+fun AppItem(
+    app: AppInfo,
+    bgColor: Color = MaterialTheme.colorScheme.background,
+    labelSmall: TextStyle = MaterialTheme.typography.labelSmall,
+    onBackGround : Color = MaterialTheme.colorScheme.onBackground,
+    onSurface: Color = MaterialTheme.colorScheme.onSurface
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(bottom = 16.dp)
@@ -44,8 +49,7 @@ fun AppItem(app: AppInfo, bgColor: Color) {
                     modifier = Modifier.size(40.dp)
                 )
             } ?: run {
-                Text(app.label.take(1), color = Color.White, fontWeight = FontWeight.Bold)
-
+                Text(app.label.take(1), color = onSurface, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -53,8 +57,8 @@ fun AppItem(app: AppInfo, bgColor: Color) {
 
         Text(
             text = app.name,
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.labelSmall,
+            color = onBackGround,
+            style = labelSmall,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.width(64.dp)
         )

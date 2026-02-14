@@ -16,9 +16,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -28,17 +27,13 @@ import java.util.Locale
 
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun getSystemTimeFlow(): Flow<LocalDateTime> = flow {
-    while (true) {
-        emit(LocalDateTime.now())
-        delay(1000L)
-    }
-}
-
-
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LockScreenClock(onSurfaceVariant: Color, onSurface: Color) {
+fun LockScreenClock(
+    onSurface: Color = MaterialTheme.colorScheme.onSurface,
+    titleSmall : TextStyle = MaterialTheme.typography.titleSmall,
+    displayLarge : TextStyle = MaterialTheme.typography.displayLarge,
+    onSurfaceVariant: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+) {
     val currentTime by getSystemTimeFlow().collectAsState(initial = LocalDateTime.now())
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     val dateFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.ENGLISH)
@@ -53,7 +48,7 @@ fun LockScreenClock(onSurfaceVariant: Color, onSurface: Color) {
         Text(
             text = currentTime.format(timeFormatter),
             color = onSurface,
-            style = MaterialTheme.typography.displayLarge,
+            style = displayLarge,
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -61,7 +56,15 @@ fun LockScreenClock(onSurfaceVariant: Color, onSurface: Color) {
         Text(
             text = currentTime.format(dateFormatter).uppercase(),
             color = onSurfaceVariant,
-            style = MaterialTheme.typography.titleMedium
+            style = titleSmall
         )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun getSystemTimeFlow(): Flow<LocalDateTime> = flow {
+    while (true) {
+        emit(LocalDateTime.now())
+        delay(1000L)
     }
 }

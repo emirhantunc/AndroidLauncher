@@ -11,6 +11,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.tunc.androidlauncher.ui.screens.appdrawer.AppDrawer
 import com.tunc.androidlauncher.ui.screens.home.HomeScreen
+import com.tunc.androidlauncher.ui.screens.launchersettings.LauncherSettings
 import com.tunc.androidlauncher.ui.theme.AndroidLauncherTheme
 
 class MainActivity : ComponentActivity() {
@@ -24,7 +25,7 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background)
                 ) { innerPadding ->
-                    AppDrawer(innerPadding)
+                    LauncherSettings(innerPadding = innerPadding)
                 }
             }
         }

@@ -12,12 +12,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
-fun SectionHeader(letter: String, primary: Color, dividerColor: Color) {
+fun SectionHeader(
+    letter: String,
+    primary: Color = MaterialTheme.colorScheme.primary,
+    dividerColor: Color=MaterialTheme.colorScheme.surface,
+    headLineSmall : TextStyle  = MaterialTheme.typography.headlineSmall
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -27,7 +31,7 @@ fun SectionHeader(letter: String, primary: Color, dividerColor: Color) {
         Text(
             text = letter,
             color = primary,
-            style = MaterialTheme.typography.headlineSmall,
+            style = headLineSmall,
             modifier = Modifier.padding(end = 16.dp)
         )
         Box(

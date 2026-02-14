@@ -5,10 +5,36 @@
     <string name="recently_used">RECENTLY USED</string>
 
     //
-    <string name="search_hint">Search apps or web...</string>
+    <string name="search_hint">Search apps or web…</string>
     <string name="time_mock">09:41</string>
     <string name="date_mock">MONDAY, JUNE 12</string>
     <string name="missing_app">App</string>
+
+
+    <string name="settings">Settings</string>
+
+
+    <string name="settings_section_appearance">APPEARANCE</string>
+    <string name="settings_section_gestures">GESTURES</string>
+    <string name="settings_section_privacy">PRIVACY</string>
+    <string name="settings_section_system">SYSTEM</string>
+
+    <string name="settings_item_theme">Theme &amp; Colors</string>
+    <string name="settings_item_grid_size">Grid Size</string>
+    <string name="settings_item_icons">Icon Pack</string>
+    <string name="settings_item_font">Font Style</string>
+
+    <string name="settings_item_double_tap">Double Tap</string>
+    <string name="settings_item_swipe_up">Swipe Up</string>
+    <string name="settings_item_swipe_down">Swipe Down</string>
+
+    <string name="settings_item_hidden_apps">Hidden Apps</string>
+    <string name="settings_item_app_lock">App Lock</string>
+    <string name="settings_item_secure_vault">Secure Vault</string>
+
+    <string name="settings_item_backup">Backup &amp; Restore</string>
+    <string name="settings_item_about">About Launcher</string>
+    <string name="settings_item_restart">Restart Launcher</string>
 
 
 </resources>

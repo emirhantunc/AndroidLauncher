@@ -23,15 +23,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.tunc.androidlauncher.R
 
 @Composable
 fun RowScope.SearchBarSection(
-    primary: Color,
-    surface: Color,
-    onSurfaceVariant: Color,
-    onSurface: Color
+    primary: Color = MaterialTheme.colorScheme.primary,
+    surface: Color = MaterialTheme.colorScheme.surface,
+    onSurfaceVariant: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    onSurface: Color = MaterialTheme.colorScheme.onSurface,
+    bodyMedium: TextStyle = MaterialTheme.typography.bodyMedium
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
@@ -61,7 +63,7 @@ fun RowScope.SearchBarSection(
                 Text(
                     text = stringResource(R.string.search_apps_place_holder),
                     color = onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = bodyMedium
                 )
             },
 
@@ -77,9 +79,8 @@ fun RowScope.SearchBarSection(
                 focusedTextColor = onSurface,
                 unfocusedTextColor = onSurface
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            textStyle = bodyMedium
         )
     }
-
-
 }

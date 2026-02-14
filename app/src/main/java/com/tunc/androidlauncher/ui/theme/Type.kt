@@ -27,17 +27,21 @@ val Typography = Typography(
     titleMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
+        fontSize = 18.sp,
+        lineHeight = 18.sp,
+        platformStyle = PlatformTextStyle(
+            includeFontPadding = false
+        )
+    ),
+    titleSmall = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
         fontSize = 13.sp,
         lineHeight = 13.sp,
         letterSpacing = 4.sp,
         platformStyle = PlatformTextStyle(
             includeFontPadding = false
         )
-    ),
-    titleSmall = TextStyle(
-        fontFamily = AppFont,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 14.sp
     ),
     headlineSmall = TextStyle(
         fontFamily = AppFont,
@@ -62,5 +66,10 @@ val Typography = Typography(
         fontFamily = AppFont,
         fontSize = 9.sp,
         fontWeight = FontWeight.Bold,
+    ),
+    titleLarge = TextStyle(
+        fontFamily = AppFont,
+        fontSize = 24.sp,
+        fontWeight = FontWeight.Bold
     )
 )

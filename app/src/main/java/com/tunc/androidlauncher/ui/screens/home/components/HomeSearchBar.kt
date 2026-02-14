@@ -15,13 +15,15 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 
 @Composable
-fun SearchBar(
-    primary: Color,
-    onSurface: Color,
-    onSecondary: Color,
-    onSurfaceVariant: Color
+fun HomeSearchBar(
+    primary: Color = MaterialTheme.colorScheme.primary,
+    onSurface: Color = MaterialTheme.colorScheme.onSurface,
+    onSecondary: Color = MaterialTheme.colorScheme.onSecondary,
+    onSurfaceVariant: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    bodyMedium : TextStyle = MaterialTheme.typography.bodyMedium
 ) {
     var text by remember { mutableStateOf("") }
 
@@ -37,7 +39,7 @@ fun SearchBar(
             Text(
                 stringResource(R.string.search_apps_place_holder),
                 color = onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
+                style = bodyMedium
             )
         },
         leadingIcon = {
@@ -54,7 +56,7 @@ fun SearchBar(
             unfocusedContainerColor = Color.Transparent,
             disabledContainerColor = Color.Transparent,
             unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
-            focusedBorderColor = Color.White,
+            focusedBorderColor = onSurface,
             cursorColor = primary,
             focusedTextColor = onSurface,
             unfocusedTextColor = onSurface
