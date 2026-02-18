@@ -22,8 +22,6 @@ import com.tunc.androidlauncher.ui.screens.home.components.HomeGrid
 import com.tunc.androidlauncher.ui.screens.home.components.HomeSearchBar
 import com.tunc.androidlauncher.ui.screens.home.components.LockScreenClock
 import com.tunc.androidlauncher.ui.screens.home.viewmodels.HomeViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlin.collections.isNotEmpty
 
 

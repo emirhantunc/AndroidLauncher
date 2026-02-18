@@ -34,7 +34,24 @@ fun LauncherMainScreen(
     var offsetY by remember { mutableStateOf(hiddenOffset) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        HomeScreen(innerPadding = innerPadding)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onDragStart = {},
+                        onDragEnd = {},
+                        onVerticalDrag = { change, dragAmount ->
+                            if (offsetY == hiddenOffset && dragAmount < -20) {
+                                change.consume()
+                                offsetY = 0f
+                            }
+                        }
+                    )
+                }
+        ) {
+            HomeScreen(innerPadding = innerPadding)
+        }
 
         Box(
             modifier = Modifier
@@ -59,20 +76,6 @@ fun LauncherMainScreen(
             AppDrawer(
                 innerPadding = innerPadding,
                 onSettingsClick = onNavigateToSettings
-            )
-        }
-
-        if (offsetY == hiddenOffset) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectVerticalDragGestures { _, dragAmount ->
-                            if (dragAmount < -10) {
-                                offsetY = 0f
-                            }
-                        }
-                    }
             )
         }
     }
