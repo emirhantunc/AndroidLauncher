@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,9 +31,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import com.tunc.androidlauncher.core.models.AppInfo
 import com.tunc.androidlauncher.data.AppLockManager
+import com.tunc.androidlauncher.data.RecentAppsManager
 import com.tunc.androidlauncher.ui.components.NotificationBadge
 import com.tunc.androidlauncher.ui.screens.launchersettings.applock.components.PinVerificationDialog
 
@@ -42,6 +45,7 @@ fun HomeGrid(
     apps: List<AppInfo?>,
     context: Context,
     appLockManager: AppLockManager? = null,
+    iconSize: Int = 36,
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
@@ -57,7 +61,8 @@ fun HomeGrid(
                 HomeIconItem(
                     app = app,
                     context = context,
-                    appLockManager = appLockManager
+                    appLockManager = appLockManager,
+                    iconSize = iconSize
                 )
             }
         }
@@ -69,6 +74,7 @@ private fun HomeIconItem(
     app: AppInfo?,
     context: Context,
     appLockManager: AppLockManager?,
+    iconSize: Int = 36,
     onSurfaceVariant: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     backGround: Color = MaterialTheme.colorScheme.background,
     bodySmall: TextStyle = MaterialTheme.typography.bodySmall
@@ -80,6 +86,7 @@ private fun HomeIconItem(
 
     var showPinDialog by remember { mutableStateOf(false) }
     val isLocked = appLockManager?.isAppLocked(app.packageName) == true && appLockManager.isPinSet()
+    val recentAppsManager = remember { RecentAppsManager(context) }
 
     Column(
         modifier = Modifier.width(84.dp),
@@ -88,7 +95,7 @@ private fun HomeIconItem(
     ) {
         Box(
             modifier = Modifier
-                .size(64.dp)
+                .size((iconSize + 28).dp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(backGround)
                 .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
@@ -96,6 +103,7 @@ private fun HomeIconItem(
                     if (isLocked) {
                         showPinDialog = true
                     } else {
+                        recentAppsManager.addRecentApp(app.packageName)
                         val launchIntent =
                             context.packageManager.getLaunchIntentForPackage(app.packageName)
                         launchIntent?.let { context.startActivity(it) }
@@ -106,7 +114,10 @@ private fun HomeIconItem(
                 AsyncImage(
                     model = icon,
                     contentDescription = app.name,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(20.dp)),
+                    contentScale = ContentScale.Crop
                 )
             }
 
@@ -137,6 +148,7 @@ private fun HomeIconItem(
             onDismiss = { showPinDialog = false },
             onPinVerified = {
                 showPinDialog = false
+                recentAppsManager.addRecentApp(app.packageName)
                 val launchIntent = context.packageManager.getLaunchIntentForPackage(app.packageName)
                 launchIntent?.let { context.startActivity(it) }
             },

@@ -10,5 +10,8 @@ sealed class Screen(val route: String) {
 
         data object AppLock : Settings("settings_app_lock")
         data object Theme : Settings("settings_theme")
+        data object HiddenApps : Settings("settings_hidden_apps")
+        data object Layout : Settings("settings_layout")
+        data object AppCustomization : Settings("settings_app_customization")
     }
 }

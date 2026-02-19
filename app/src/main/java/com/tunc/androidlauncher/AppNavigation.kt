@@ -2,8 +2,6 @@ package com.tunc.androidlauncher
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,6 +11,9 @@ import com.tunc.androidlauncher.navigation.Screen
 import com.tunc.androidlauncher.ui.LauncherMainScreen
 import com.tunc.androidlauncher.ui.screens.launchersettings.LauncherSettings
 import com.tunc.androidlauncher.ui.screens.launchersettings.applock.AppLockSettings
+import com.tunc.androidlauncher.ui.screens.launchersettings.hiddenapps.HiddenAppsSettings
+import com.tunc.androidlauncher.ui.screens.layoutsettings.AppCustomizationSettings
+import com.tunc.androidlauncher.ui.screens.layoutsettings.LayoutSettings
 import com.tunc.androidlauncher.ui.screens.themesettings.ThemeSettings
 
 @Composable
@@ -45,11 +46,17 @@ fun AppNavigation(
                     onBackClick = {
                         navController.popBackStack()
                     },
-                    onSettingClicked = { id ->
-                        when (id) {
-                            "app_lock" -> navController.navigate(Screen.Settings.AppLock.route)
-                            "theme" -> navController.navigate(Screen.Settings.Theme.route)
-                        }
+                    onNavigateToAppLock = {
+                        navController.navigate(Screen.Settings.AppLock.route)
+                    },
+                    onNavigateToTheme = {
+                        navController.navigate(Screen.Settings.Theme.route)
+                    },
+                    onNavigateToHiddenApps = {
+                        navController.navigate(Screen.Settings.HiddenApps.route)
+                    },
+                    onNavigateToLayout = {
+                        navController.navigate(Screen.Settings.Layout.route)
                     }
                 )
             }
@@ -71,6 +78,36 @@ fun AppNavigation(
                     },
                     onThemeChange = { newMode ->
                         onThemeChanged(newMode)
+                    }
+                )
+            }
+
+            composable(Screen.Settings.HiddenApps.route) {
+                HiddenAppsSettings(
+                    innerPadding = innerPadding,
+                    onBackClick = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable(Screen.Settings.Layout.route) {
+                LayoutSettings(
+                    innerPadding = innerPadding,
+                    onBackClick = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToCustomization = {
+                        navController.navigate(Screen.Settings.AppCustomization.route)
+                    }
+                )
+            }
+
+            composable(Screen.Settings.AppCustomization.route) {
+                AppCustomizationSettings(
+                    innerPadding = innerPadding,
+                    onBackClick = {
+                        navController.popBackStack()
                     }
                 )
             }

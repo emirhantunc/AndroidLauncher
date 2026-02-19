@@ -3,9 +3,11 @@ package com.tunc.androidlauncher.ui.screens.appdrawer.components
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,9 +24,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import com.tunc.androidlauncher.core.models.AppInfo
 import com.tunc.androidlauncher.data.AppLockManager
+import com.tunc.androidlauncher.data.RecentAppsManager
 import com.tunc.androidlauncher.ui.components.NotificationBadge
 import com.tunc.androidlauncher.ui.screens.launchersettings.applock.components.PinVerificationDialog
 
@@ -32,6 +36,8 @@ import com.tunc.androidlauncher.ui.screens.launchersettings.applock.components.P
 fun AppItem(
     app: AppInfo,
     appLockManager: AppLockManager? = null,
+    onLongClick: (() -> Unit)? = null,
+    iconSize: Int = 40,
     bgColor: Color = MaterialTheme.colorScheme.background,
     labelSmall: TextStyle = MaterialTheme.typography.labelSmall,
     onBackGround : Color = MaterialTheme.colorScheme.onBackground,
@@ -45,17 +51,22 @@ fun AppItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .padding(bottom = 16.dp)
-            .clickable {
-                if (isLocked) {
-                    showPinDialog = true
-                } else {
-                    launchApp(context, app.packageName)
+            .combinedClickable(
+                onClick = {
+                    if (isLocked) {
+                        showPinDialog = true
+                    } else {
+                        launchApp(context, app.packageName)
+                    }
+                },
+                onLongClick = {
+                    onLongClick?.invoke()
                 }
-            }
+            )
     ) {
         Box(
             modifier = Modifier
-                .size(60.dp)
+                .size((iconSize + 20).dp)
                 .clip(RoundedCornerShape(18.dp))
                 .background(bgColor),
             contentAlignment = Alignment.Center
@@ -64,7 +75,10 @@ fun AppItem(
                 AsyncImage(
                     model = icon,
                     contentDescription = app.name,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(18.dp)),
+                    contentScale = ContentScale.Crop
                 )
             } ?: run {
                 Text(app.label.take(1), color = onSurface, fontWeight = FontWeight.Bold)
@@ -102,6 +116,9 @@ fun AppItem(
 }
 
 private fun launchApp(context: Context, packageName: String) {
+    val recentAppsManager = RecentAppsManager(context)
+    recentAppsManager.addRecentApp(packageName)
+
     val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)
     launchIntent?.let { context.startActivity(it) }
 }

@@ -18,16 +18,15 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tunc.androidlauncher.R
-import com.tunc.androidlauncher.core.getInstalledApps
 import com.tunc.androidlauncher.core.models.AppInfo
+import com.tunc.androidlauncher.data.AppManager
 import com.tunc.androidlauncher.ui.screens.launchersettings.applock.components.AppLockItem
 import com.tunc.androidlauncher.ui.screens.launchersettings.applock.components.PinInputSection
 import com.tunc.androidlauncher.ui.screens.launchersettings.applock.models.AppLockSettings
 import com.tunc.androidlauncher.ui.screens.launchersettings.applock.viewmodels.AppLockViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 enum class AppLockScreen {
     MAIN, SET_PIN, CONFIRM_PIN, CHANGE_PIN
@@ -42,7 +41,8 @@ fun AppLockSettings(
     backgroundColor: Color = MaterialTheme.colorScheme.background
 ) {
     val context = LocalContext.current
-    var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
+    val appManager = remember { AppManager.getInstance(context) }
+    val apps by appManager.allApps.collectAsStateWithLifecycle()
     var currentScreen by remember { mutableStateOf(AppLockScreen.MAIN) }
     var tempPin by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") }
@@ -50,9 +50,7 @@ fun AppLockSettings(
     val appLockSettings by viewModel.appLockSettings.collectAsState()
 
     LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            apps = getInstalledApps(context).sortedBy { it.label.lowercase() }
-        }
+        appManager.loadApps()
     }
 
     Box(

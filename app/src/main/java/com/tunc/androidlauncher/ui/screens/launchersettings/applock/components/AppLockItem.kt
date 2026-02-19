@@ -17,6 +17,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import com.tunc.androidlauncher.core.models.AppInfo
 
@@ -56,7 +57,10 @@ fun AppLockItem(
                 AsyncImage(
                     model = app.icon,
                     contentDescription = app.label,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
                 )
             }
 

@@ -1,10 +1,11 @@
 <resources>
     <string name="app_name">AndroidLauncher</string>
-    //
+
     <string name="search_apps_place_holder">Search apps...</string>
     <string name="recently_used">RECENTLY USED</string>
+    <string name="recent_apps">Recent Apps</string>
 
-    //
+
     <string name="search_hint">Search apps or web…</string>
     <string name="time_mock">09:41</string>
     <string name="date_mock">MONDAY, JUNE 12</string>
@@ -19,8 +20,8 @@
     <string name="settings_section_privacy">PRIVACY</string>
     <string name="settings_section_system">SYSTEM</string>
 
-    <string name="settings_item_theme">Theme &amp; Colors</string>
-    <string name="settings_item_grid_size">Grid Size</string>
+    <string name="settings_item_theme">Wallpaper &amp; Theme</string>
+    <string name="settings_item_grid_size">Layout</string>
     <string name="settings_item_icons">Icon Pack</string>
     <string name="settings_item_font">Font Style</string>
 
@@ -65,5 +66,17 @@
     <string name="theme_dark_description">Always use dark theme</string>
     <string name="theme_system_description">Follow system settings</string>
 
+    <!-- Folder Settings -->
+    <string name="folder_create">Create Folder</string>
+    <string name="folder_rename">Rename Folder</string>
+    <string name="folder_delete">Delete Folder</string>
+    <string name="folder_name">Folder Name</string>
+    <string name="folder_add_app">Add to Folder</string>
+    <string name="folder_remove_app">Remove from Folder</string>
+    <string name="folder_select">Select Folder</string>
+    <string name="folder_apps_count">%d apps</string>
+    <string name="folder_empty">Empty folder</string>
+
 
 </resources>
+

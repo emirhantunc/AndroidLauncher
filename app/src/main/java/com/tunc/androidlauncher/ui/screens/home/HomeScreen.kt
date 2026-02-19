@@ -1,7 +1,9 @@
 package com.tunc.androidlauncher.ui.screens.home
 
+import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -9,14 +11,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.tunc.androidlauncher.core.findApp
-import com.tunc.androidlauncher.core.getInstalledApps
-import com.tunc.androidlauncher.core.models.AppInfo
+import coil.compose.rememberAsyncImagePainter
 import com.tunc.androidlauncher.data.AppLockManager
+import com.tunc.androidlauncher.data.LayoutManager
+import com.tunc.androidlauncher.data.WallpaperManager
 import com.tunc.androidlauncher.ui.screens.home.components.BottomBar
 import com.tunc.androidlauncher.ui.screens.home.components.HomeGrid
 import com.tunc.androidlauncher.ui.screens.home.components.HomeSearchBar
@@ -35,6 +38,10 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val appLockManager = remember { AppLockManager(context) }
+    val wallpaperManager = remember { WallpaperManager(context) }
+    val layoutManager = remember { LayoutManager(context) }
+    val wallpaperUri by wallpaperManager.wallpaperUriFlow.collectAsStateWithLifecycle()
+    val iconSize by layoutManager.iconSizeFlow.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.loadApps(context)
@@ -44,16 +51,28 @@ fun HomeScreen(
     val dockApps = gridApps
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backGround)
-            .padding(16.dp)
-            .padding(innerPadding)
+        modifier = Modifier.fillMaxSize()
     ) {
+        if (wallpaperUri != null) {
+            Image(
+                painter = rememberAsyncImagePainter(Uri.parse(wallpaperUri)),
+                contentDescription = "Wallpaper",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(backGround)
+            )
+        }
 
         Column(
             modifier = Modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .padding(16.dp)
+                .padding(innerPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             HomeSearchBar()
@@ -68,7 +87,8 @@ fun HomeScreen(
                 HomeGrid(
                     apps = gridApps,
                     context = context,
-                    appLockManager = appLockManager
+                    appLockManager = appLockManager,
+                    iconSize = iconSize.homeScreenSize
                 )
             }
 
@@ -77,7 +97,8 @@ fun HomeScreen(
             BottomBar(
                 apps = dockApps,
                 context = context,
-                appLockManager = appLockManager
+                appLockManager = appLockManager,
+                iconSize = iconSize.bottomBarSize
             )
         }
     }

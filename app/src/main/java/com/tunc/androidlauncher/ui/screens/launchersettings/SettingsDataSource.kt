@@ -14,7 +14,7 @@ object SettingsDataSource {
                     titleResId = R.string.settings_item_theme,
                 ),
                 SettingModel(
-                    id = "grid_size",
+                    id = "layout",
                     titleResId = R.string.settings_item_grid_size,
                 ),
                 SettingModel(

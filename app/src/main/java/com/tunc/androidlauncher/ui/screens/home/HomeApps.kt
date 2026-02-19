@@ -1,9 +1,8 @@
 package com.tunc.androidlauncher.ui.screens.home
 
 import android.content.Context
-import com.tunc.androidlauncher.core.findApp
-import com.tunc.androidlauncher.core.getInstalledApps
 import com.tunc.androidlauncher.core.models.AppInfo
+import com.tunc.androidlauncher.data.AppManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -20,12 +19,13 @@ object HomeApps {
         if (isLoaded) return
 
         withContext(Dispatchers.IO) {
-            val allApps = getInstalledApps(context)
+            val appManager = AppManager.getInstance(context)
+            appManager.loadApps()
 
-            val phone = findApp(allApps, listOf("dialer", "phone", "call", "telefon"))
-            val sms = findApp(allApps, listOf("message", "sms", "messaging", "mesaj"))
-            val browser = findApp(allApps, listOf("chrome", "browser", "internet", "web"))
-            val camera = findApp(allApps, listOf("camera", "kamera", "foto"))
+            val phone = appManager.findApp(listOf("dialer", "phone", "call", "telefon"))
+            val sms = appManager.findApp(listOf("message", "sms", "messaging", "mesaj"))
+            val browser = appManager.findApp(listOf("chrome", "browser", "internet", "web"))
+            val camera = appManager.findApp(listOf("camera", "kamera", "foto"))
 
             val selectedApps = listOfNotNull(phone, sms, browser, camera)
 
@@ -36,3 +36,4 @@ object HomeApps {
         }
     }
 }
+
