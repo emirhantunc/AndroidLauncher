@@ -2,6 +2,7 @@ package com.tunc.androidlauncher.ui.screens.layoutsettings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,14 +15,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tunc.androidlauncher.data.IconSize
 import com.tunc.androidlauncher.data.LayoutManager
+import kotlin.math.roundToInt
 
 @Composable
 fun LayoutSettings(
@@ -47,6 +51,8 @@ fun LayoutSettings(
         IconSize.LARGE
     )
 
+    var offsetX by remember { mutableFloatStateOf(0f) }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -56,6 +62,24 @@ fun LayoutSettings(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .offset { IntOffset(offsetX.roundToInt(), 0) }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (offsetX > 100) {
+                                onBackClick()
+                            }
+                            offsetX = 0f
+                        },
+                        onDragCancel = {
+                            offsetX = 0f
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            val newOffset = offsetX + dragAmount
+                            offsetX = if (newOffset > 0) newOffset else 0f
+                        }
+                    )
+                }
                 .padding(horizontal = 24.dp)
         ) {
             Row(
