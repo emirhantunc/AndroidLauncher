@@ -1,13 +1,14 @@
 package com.tunc.androidlauncher.data
 
 import android.content.Context
+import com.tunc.androidlauncher.R
 import com.tunc.androidlauncher.data.database.AppDatabase
 import com.tunc.androidlauncher.data.database.AppFolder
 import com.tunc.androidlauncher.data.database.FolderApp
 import com.tunc.androidlauncher.data.database.FolderWithApps
 import kotlinx.coroutines.flow.Flow
 
-class FolderManager(context: Context) {
+class FolderManager(private val context: Context) {
     private val database = AppDatabase.getDatabase(context)
     private val dao = database.appFolderDao()
 
@@ -34,6 +35,10 @@ class FolderManager(context: Context) {
         }
     }
 
+    suspend fun getFolderByIdSync(folderId: Long): AppFolder? {
+        return dao.getFolderById(folderId)
+    }
+
     suspend fun deleteFolder(folderId: Long) {
         val folder = dao.getFolderById(folderId)
         folder?.let {
@@ -42,12 +47,37 @@ class FolderManager(context: Context) {
     }
 
     suspend fun addAppToFolder(folderId: Long, packageName: String) {
-        dao.removeAppFromAllFolders(packageName)
+        // Önce uygulamanın mevcut klasörünü bul
+        val currentFolder = dao.getFolderByPackageName(packageName)
+
+        // Eğer uygulama başka bir klasördeyse ve farklı bir klasöre taşınıyorsa
+        if (currentFolder != null && currentFolder.folderId != folderId) {
+            // Eski klasörden manuel olarak çıkar (otomatik silme olmadan)
+            dao.removeAppFromFolder(currentFolder.folderId, packageName)
+
+            // Eski klasörde uygulama kalmadıysa klasörü sil
+            val appsInOldFolder = dao.getAppsInFolderSync(currentFolder.folderId)
+            if (appsInOldFolder.isEmpty()) {
+                val oldFolder = dao.getFolderById(currentFolder.folderId)
+                oldFolder?.let { dao.deleteFolder(it) }
+            }
+        }
+
+        // Yeni klasöre ekle
         dao.insertFolderApp(FolderApp(folderId = folderId, packageName = packageName))
     }
 
     suspend fun removeAppFromFolder(folderId: Long, packageName: String) {
         dao.removeAppFromFolder(folderId, packageName)
+
+        // Klasörde uygulama kalmadıysa klasörü sil
+        val folder = dao.getFolderById(folderId)
+        folder?.let {
+            val appsInFolder = dao.getAppsInFolderSync(folderId)
+            if (appsInFolder.isEmpty()) {
+                dao.deleteFolder(it)
+            }
+        }
     }
 
     suspend fun isAppInFolder(packageName: String): Boolean {
@@ -67,44 +97,44 @@ class FolderManager(context: Context) {
             packageName.contains("telegram", ignoreCase = true) ||
             packageName.contains("snapchat", ignoreCase = true) ||
             packageName.contains("tiktok", ignoreCase = true) ||
-            packageName.contains("linkedin", ignoreCase = true) -> "Sosyal"
+            packageName.contains("linkedin", ignoreCase = true) -> context.getString(R.string.folder_category_social)
 
             packageName.contains("youtube", ignoreCase = true) ||
             packageName.contains("netflix", ignoreCase = true) ||
             packageName.contains("spotify", ignoreCase = true) ||
             packageName.contains("music", ignoreCase = true) ||
             packageName.contains("video", ignoreCase = true) ||
-            packageName.contains("media", ignoreCase = true) -> "Eğlence"
+            packageName.contains("media", ignoreCase = true) -> context.getString(R.string.folder_category_entertainment)
 
             packageName.contains("game", ignoreCase = true) ||
-            packageName.contains("play", ignoreCase = true) -> "Oyun"
+            packageName.contains("play", ignoreCase = true) -> context.getString(R.string.folder_category_games)
 
             packageName.contains("camera", ignoreCase = true) ||
             packageName.contains("photo", ignoreCase = true) ||
-            packageName.contains("gallery", ignoreCase = true) -> "Fotoğraf"
+            packageName.contains("gallery", ignoreCase = true) -> context.getString(R.string.folder_category_photo)
 
             packageName.contains("mail", ignoreCase = true) ||
             packageName.contains("gmail", ignoreCase = true) ||
-            packageName.contains("outlook", ignoreCase = true) -> "Mail"
+            packageName.contains("outlook", ignoreCase = true) -> context.getString(R.string.folder_category_mail)
 
             packageName.contains("chrome", ignoreCase = true) ||
             packageName.contains("browser", ignoreCase = true) ||
-            packageName.contains("firefox", ignoreCase = true) -> "Web"
+            packageName.contains("firefox", ignoreCase = true) -> context.getString(R.string.folder_category_web)
 
             packageName.contains("maps", ignoreCase = true) ||
-            packageName.contains("navigation", ignoreCase = true) -> "Haritalar"
+            packageName.contains("navigation", ignoreCase = true) -> context.getString(R.string.folder_category_maps)
 
             packageName.contains("shop", ignoreCase = true) ||
             packageName.contains("store", ignoreCase = true) ||
-            packageName.contains("amazon", ignoreCase = true) -> "Alışveriş"
+            packageName.contains("amazon", ignoreCase = true) -> context.getString(R.string.folder_category_shopping)
 
             packageName.contains("news", ignoreCase = true) ||
-            packageName.contains("haber", ignoreCase = true) -> "Haberler"
+            packageName.contains("haber", ignoreCase = true) -> context.getString(R.string.folder_category_news)
 
             packageName.contains("bank", ignoreCase = true) ||
-            packageName.contains("finance", ignoreCase = true) -> "Finans"
+            packageName.contains("finance", ignoreCase = true) -> context.getString(R.string.folder_category_finance)
 
-            else -> "Genel"
+            else -> context.getString(R.string.folder_category_general)
         }
     }
 }

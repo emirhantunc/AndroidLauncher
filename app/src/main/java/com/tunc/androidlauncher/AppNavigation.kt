@@ -12,8 +12,9 @@ import com.tunc.androidlauncher.ui.LauncherMainScreen
 import com.tunc.androidlauncher.ui.screens.launchersettings.LauncherSettings
 import com.tunc.androidlauncher.ui.screens.launchersettings.applock.AppLockSettings
 import com.tunc.androidlauncher.ui.screens.launchersettings.hiddenapps.HiddenAppsSettings
-import com.tunc.androidlauncher.ui.screens.layoutsettings.AppCustomizationSettings
-import com.tunc.androidlauncher.ui.screens.layoutsettings.LayoutSettings
+import com.tunc.androidlauncher.ui.screens.launchersettings.languagesettings.LanguageSettings
+import com.tunc.androidlauncher.ui.screens.launchersettings.layoutsettings.AppCustomizationSettings
+import com.tunc.androidlauncher.ui.screens.launchersettings.layoutsettings.LayoutSettings
 import com.tunc.androidlauncher.ui.screens.themesettings.ThemeSettings
 
 @Composable
@@ -57,6 +58,9 @@ fun AppNavigation(
                     },
                     onNavigateToLayout = {
                         navController.navigate(Screen.Settings.Layout.route)
+                    },
+                    onNavigateToLanguage = {
+                        navController.navigate(Screen.Settings.Language.route)
                     }
                 )
             }
@@ -105,6 +109,15 @@ fun AppNavigation(
 
             composable(Screen.Settings.AppCustomization.route) {
                 AppCustomizationSettings(
+                    innerPadding = innerPadding,
+                    onBackClick = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable(Screen.Settings.Language.route) {
+                LanguageSettings(
                     innerPadding = innerPadding,
                     onBackClick = {
                         navController.popBackStack()

@@ -1,6 +1,5 @@
 package com.tunc.androidlauncher.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -12,10 +11,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.tunc.androidlauncher.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +50,7 @@ fun RenameFolderDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Klasör Adını Değiştir",
+                        text = stringResource(R.string.folder_rename),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = onBackgroundColor
@@ -67,7 +68,7 @@ fun RenameFolderDialog(
                 OutlinedTextField(
                     value = folderName,
                     onValueChange = { folderName = it },
-                    label = { Text("Klasör Adı") },
+                    label = { Text(stringResource(R.string.folder_name_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -91,7 +92,7 @@ fun RenameFolderDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("İptal", color = onBackgroundColor)
+                        Text(stringResource(R.string.cancel), color = onBackgroundColor)
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -105,7 +106,7 @@ fun RenameFolderDialog(
                         colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
                         enabled = folderName.isNotBlank()
                     ) {
-                        Text("Kaydet")
+                        Text(stringResource(R.string.save))
                     }
                 }
             }

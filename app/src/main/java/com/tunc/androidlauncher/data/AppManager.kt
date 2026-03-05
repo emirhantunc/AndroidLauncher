@@ -1,21 +1,29 @@
 package com.tunc.androidlauncher.data
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.util.Log
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.tunc.androidlauncher.core.models.AppInfo
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AppManager private constructor(private val context: Context) {
 
     companion object {
+        private const val TAG = "AppManager"
+
         @Volatile
         private var INSTANCE: AppManager? = null
 
@@ -29,14 +37,81 @@ class AppManager private constructor(private val context: Context) {
     }
 
     private val customizationManager = AppCustomizationManager(context)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val _allApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val allApps = _allApps.asStateFlow()
 
     private var isLoaded = false
 
+    // BroadcastReceiver: Uygulama eklendiğinde/silindiğinde otomatik güncelleme
+    private val packageChangeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Log.d(TAG, "BroadcastReceiver.onReceive called")
+            Log.d(TAG, "Intent: ${intent?.action}")
+
+            when (intent?.action) {
+                Intent.ACTION_PACKAGE_ADDED,
+                Intent.ACTION_PACKAGE_REMOVED,
+                Intent.ACTION_PACKAGE_REPLACED -> {
+                    val packageName = intent.data?.schemeSpecificPart
+                    Log.d(TAG, "✅ Package changed: ${intent.action}, package: $packageName")
+
+                    // Uygulamaları yeniden yükle
+                    scope.launch {
+                        Log.d(TAG, "🔄 Starting app reload...")
+                        loadApps(forceReload = true)
+                        Log.d(TAG, "✅ App reload completed. Total apps: ${_allApps.value.size}")
+                    }
+                }
+                else -> {
+                    Log.d(TAG, "⚠️ Unknown action: ${intent?.action}")
+                }
+            }
+        }
+    }
+
+    init {
+        // BroadcastReceiver'ı kaydet
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            addDataScheme("package")
+        }
+
+        // Android 13+ (API 33+) için flag gerekiyor
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(
+                packageChangeReceiver,
+                filter,
+                Context.RECEIVER_NOT_EXPORTED
+            )
+        } else {
+            context.registerReceiver(packageChangeReceiver, filter)
+        }
+
+        Log.d(TAG, "Package change receiver registered (SDK: ${android.os.Build.VERSION.SDK_INT})")
+    }
+
+    fun unregister() {
+        try {
+            context.unregisterReceiver(packageChangeReceiver)
+            Log.d(TAG, "Package change receiver unregistered")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error unregistering receiver", e)
+        }
+    }
+
     suspend fun loadApps(forceReload: Boolean = false) {
-        if (isLoaded && !forceReload) return
+        Log.d(TAG, "loadApps called (forceReload: $forceReload, isLoaded: $isLoaded)")
+
+        if (isLoaded && !forceReload) {
+            Log.d(TAG, "Apps already loaded, skipping")
+            return
+        }
+
+        Log.d(TAG, "Loading apps from package manager...")
 
         withContext(Dispatchers.IO) {
             val packageManager = context.packageManager
@@ -44,6 +119,8 @@ class AppManager private constructor(private val context: Context) {
                 addCategory(Intent.CATEGORY_LAUNCHER)
             }
             val resolveInfoList = packageManager.queryIntentActivities(intent, 0)
+
+            Log.d(TAG, "Found ${resolveInfoList.size} launchable apps")
 
             val customizations = customizationManager.getAllCustomizations().firstOrNull() ?: emptyList()
             val customizationMap = customizations.associateBy { it.packageName }
@@ -72,8 +149,12 @@ class AppManager private constructor(private val context: Context) {
                 )
             }
 
-            _allApps.value = appList.sortedBy { it.label.lowercase() }
+            val sortedList = appList.sortedBy { it.label.lowercase() }
+            _allApps.value = sortedList
             isLoaded = true
+
+            Log.d(TAG, "✅ Apps loaded and updated: ${sortedList.size} apps")
+            Log.d(TAG, "📱 Sample apps: ${sortedList.take(5).map { it.name }}")
         }
     }
 

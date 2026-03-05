@@ -6,6 +6,8 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.tunc.androidlauncher.data.AppLockManager
+import com.tunc.androidlauncher.data.LauncherMode
 import com.tunc.androidlauncher.data.LayoutManager
 import com.tunc.androidlauncher.data.WallpaperManager
 import com.tunc.androidlauncher.ui.screens.home.components.BottomBar
@@ -34,7 +37,8 @@ import kotlin.collections.isNotEmpty
 fun HomeScreen(
     innerPadding: PaddingValues,
     backGround: Color = MaterialTheme.colorScheme.background,
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(),
+    onNavigateToSettings: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val appLockManager = remember { AppLockManager(context) }
@@ -42,8 +46,9 @@ fun HomeScreen(
     val layoutManager = remember { LayoutManager(context) }
     val wallpaperUri by wallpaperManager.wallpaperUriFlow.collectAsStateWithLifecycle()
     val iconSize by layoutManager.iconSizeFlow.collectAsStateWithLifecycle()
+    val launcherMode by layoutManager.launcherModeFlow.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(launcherMode) {
         viewModel.loadApps(context)
     }
 
@@ -75,27 +80,55 @@ fun HomeScreen(
                 .padding(innerPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            HomeSearchBar()
+            if (launcherMode == LauncherMode.APP_DRAWER) {
+                HomeSearchBar()
+                Spacer(modifier = Modifier.height(26.dp))
+            } else {
+                // HOME_GRID modunda sadece settings butonu
+                if (onNavigateToSettings != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.TopEnd
+                    ) {
+                        IconButton(onClick = onNavigateToSettings) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                } else {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
 
-            Spacer(modifier = Modifier.height(26.dp))
-
-            LockScreenClock()
-
-            Spacer(modifier = Modifier.height(14.dp))
+            if (launcherMode == LauncherMode.APP_DRAWER) {
+                LockScreenClock()
+                Spacer(modifier = Modifier.height(14.dp))
+            }
 
             if (gridApps.isNotEmpty()) {
                 HomeGrid(
                     apps = gridApps,
                     context = context,
+                    modifier = if (launcherMode == LauncherMode.HOME_GRID) Modifier.weight(1f) else Modifier,
                     appLockManager = appLockManager,
-                    iconSize = iconSize.homeScreenSize
+                    iconSize = iconSize.homeScreenSize,
+                    isFullScreen = launcherMode == LauncherMode.HOME_GRID
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            if (launcherMode == LauncherMode.APP_DRAWER) {
+                Spacer(modifier = Modifier.weight(1f))
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             BottomBar(
-                apps = dockApps,
+                apps = dockApps.take(4),
                 context = context,
                 appLockManager = appLockManager,
                 iconSize = iconSize.bottomBarSize

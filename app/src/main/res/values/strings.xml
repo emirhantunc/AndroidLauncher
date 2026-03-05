@@ -13,6 +13,7 @@
 
 
     <string name="settings">Settings</string>
+    <string name="search_settings">Search settings...</string>
 
 
     <string name="settings_section_appearance">APPEARANCE</string>
@@ -24,6 +25,8 @@
     <string name="settings_item_grid_size">Layout</string>
     <string name="settings_item_icons">Icon Pack</string>
     <string name="settings_item_font">Font Style</string>
+    <string name="settings_item_language">Language</string>
+    <string name="settings_item_launcher_mode">Launcher Mode</string>
 
     <string name="settings_item_double_tap">Double Tap</string>
     <string name="settings_item_swipe_up">Swipe Up</string>
@@ -76,6 +79,38 @@
     <string name="folder_select">Select Folder</string>
     <string name="folder_apps_count">%d apps</string>
     <string name="folder_empty">Empty folder</string>
+    <string name="folder_add_to">%s - Add to Folder</string>
+    <string name="folder_create_new">Create New Folder</string>
+    <string name="folder_new">New Folder</string>
+    <string name="folder_name_label">Folder Name</string>
+    <string name="cancel">Cancel</string>
+    <string name="create">Create</string>
+    <string name="save">Save</string>
+
+    <!-- Folder Categories -->
+    <string name="folder_category_social">Social</string>
+    <string name="folder_category_entertainment">Entertainment</string>
+    <string name="folder_category_games">Games</string>
+    <string name="folder_category_photo">Photo</string>
+    <string name="folder_category_mail">Mail</string>
+    <string name="folder_category_web">Web</string>
+    <string name="folder_category_maps">Maps</string>
+    <string name="folder_category_shopping">Shopping</string>
+    <string name="folder_category_news">News</string>
+    <string name="folder_category_finance">Finance</string>
+    <string name="folder_category_general">General</string>
+
+    <!-- Launcher Mode -->
+    <string name="launcher_mode_title">LAUNCHER MODE</string>
+    <string name="launcher_mode_app_drawer">App Drawer</string>
+    <string name="launcher_mode_home_grid">Home Grid</string>
+    <string name="launcher_mode_app_drawer_desc">Swipe up to open app drawer</string>
+    <string name="launcher_mode_home_grid_desc">All apps on home screen</string>
+
+    <!-- Delete App -->
+    <string name="delete_app_title">Delete App</string>
+    <string name="delete_app_message">Do you want to uninstall %s?</string>
+    <string name="delete">Delete</string>
 
 
 </resources>

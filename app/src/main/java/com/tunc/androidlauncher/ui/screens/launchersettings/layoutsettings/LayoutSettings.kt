@@ -1,4 +1,4 @@
-package com.tunc.androidlauncher.ui.screens.layoutsettings
+package com.tunc.androidlauncher.ui.screens.launchersettings.layoutsettings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tunc.androidlauncher.data.IconSize
+import com.tunc.androidlauncher.data.LauncherMode
 import com.tunc.androidlauncher.data.LayoutManager
 import kotlin.math.roundToInt
 
@@ -44,11 +45,17 @@ fun LayoutSettings(
     val context = LocalContext.current
     val layoutManager = remember { LayoutManager(context) }
     val selectedIconSize by layoutManager.iconSizeFlow.collectAsStateWithLifecycle()
+    val selectedLauncherMode by layoutManager.launcherModeFlow.collectAsStateWithLifecycle()
 
     val iconSizeOptions = listOf(
         IconSize.SMALL,
         IconSize.MEDIUM,
         IconSize.LARGE
+    )
+
+    val launcherModeOptions = listOf(
+        LauncherMode.APP_DRAWER,
+        LauncherMode.HOME_GRID
     )
 
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -107,7 +114,7 @@ fun LayoutSettings(
             }
 
             Text(
-                text = "ICON SIZE",
+                text = "LAUNCHER MODE",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 3.sp
@@ -119,6 +126,36 @@ fun LayoutSettings(
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                items(launcherModeOptions) { launcherMode ->
+                    LauncherModeOptionItem(
+                        launcherMode = launcherMode,
+                        isSelected = selectedLauncherMode == launcherMode,
+                        onClick = {
+                            layoutManager.setLauncherMode(launcherMode)
+                        },
+                        primaryColor = primaryColor,
+                        surfaceColor = surfaceColor,
+                        onBackgroundColor = onBackgroundColor,
+                        titleMediumStyle = titleMediumStyle,
+                        bodySmallStyle = bodySmallStyle
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                item {
+                    Text(
+                        text = "ICON SIZE",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 3.sp
+                        ),
+                        color = onBackgroundColor.copy(alpha = 0.3f),
+                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
+                    )
+                }
                 item {
                     Card(
                         modifier = Modifier
@@ -168,6 +205,64 @@ fun LayoutSettings(
                     )
                 }
                 item { Spacer(modifier = Modifier.height(20.dp)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LauncherModeOptionItem(
+    launcherMode: LauncherMode,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    primaryColor: Color,
+    surfaceColor: Color,
+    onBackgroundColor: Color,
+    titleMediumStyle: TextStyle,
+    bodySmallStyle: TextStyle
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) primaryColor.copy(alpha = 0.15f) else surfaceColor.copy(alpha = 0.5f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = launcherMode.displayName,
+                    style = titleMediumStyle.copy(fontWeight = FontWeight.Medium),
+                    color = if (isSelected) primaryColor else onBackgroundColor
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = when (launcherMode) {
+                        LauncherMode.APP_DRAWER -> "Swipe up to open app drawer"
+                        LauncherMode.HOME_GRID -> "All apps on home screen"
+                    },
+                    style = bodySmallStyle,
+                    color = onBackgroundColor.copy(alpha = 0.6f)
+                )
+            }
+
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Selected",
+                    tint = primaryColor,
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }

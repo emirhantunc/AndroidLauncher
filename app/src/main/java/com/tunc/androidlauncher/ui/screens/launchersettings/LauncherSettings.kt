@@ -61,6 +61,7 @@ fun LauncherSettings(
     onNavigateToTheme: () -> Unit = {},
     onNavigateToHiddenApps: () -> Unit = {},
     onNavigateToLayout: () -> Unit = {},
+    onNavigateToLanguage: () -> Unit = {},
     onBackClick: () -> Unit = {},
     onSettingClicked: (String) -> Unit = {},
     backGroundColor: Color = MaterialTheme.colorScheme.background,
@@ -110,6 +111,7 @@ fun LauncherSettings(
             "theme" -> onNavigateToTheme()
             "hidden_apps" -> onNavigateToHiddenApps()
             "layout" -> onNavigateToLayout()
+            "language" -> onNavigateToLanguage()
         }
     }
 
@@ -272,7 +274,7 @@ private fun SettingsSearchBar(
                 Box(modifier = Modifier.weight(1f)) {
                     if (query.isEmpty()) {
                         Text(
-                            text = "Search settings...",
+                            text = stringResource(R.string.search_settings),
                             style = MaterialTheme.typography.bodyMedium,
                             color = onSurfaceVariant.copy(alpha = 0.6f)
                         )

@@ -67,6 +67,9 @@ fun AppDrawer(
     var selectedApp by remember { mutableStateOf<AppInfo?>(null) }
     var showAddToFolderDialog by remember { mutableStateOf(false) }
 
+    // Edit mode state
+    var editMode by remember { mutableStateOf(false) }
+
     var draggedApp by remember { mutableStateOf<AppInfo?>(null) }
     var dragPosition by remember { mutableStateOf(Offset.Zero) }
     val appPositions = remember { mutableStateMapOf<String, Pair<Offset, IntSize>>() }
@@ -193,6 +196,12 @@ fun AppDrawer(
                                 app = app,
                                 appLockManager = appLockManager,
                                 iconSize = iconSize.appDrawerSize,
+                                editMode = editMode,
+                                onEditModeChange = { editMode = it },
+                                onDeleteClick = {
+                                    com.tunc.androidlauncher.utils.AppUninstaller.uninstallApp(context, app.packageName)
+                                    editMode = false
+                                },
                                 onDragStart = {
                                     draggedApp = app
                                     hoveredApp = null
@@ -248,6 +257,7 @@ fun AppDrawer(
             val folderApps = it.apps.mapNotNull { folderApp ->
                 allApps.find { app -> app.packageName == folderApp.packageName }
             }
+
             FolderDialog(
                 folderName = it.folder.name,
                 apps = folderApps,
@@ -258,9 +268,15 @@ fun AppDrawer(
                     launchIntent?.let { intent -> context.startActivity(intent) }
                     selectedFolder = null
                 },
-                onRenameFolder = {
-                    folderToRename = Pair(it.folder.id, it.folder.name)
-                    showRenameDialog = true
+                onRenameFolder = { newName ->
+                    coroutineScope.launch {
+                        folderManager.updateFolderName(it.folder.id, newName)
+                    }
+                },
+                onAppRemove = { app ->
+                    coroutineScope.launch {
+                        folderManager.removeAppFromFolder(it.folder.id, app.packageName)
+                    }
                 },
                 iconSize = 48
             )

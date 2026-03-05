@@ -13,23 +13,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import com.tunc.androidlauncher.data.AppManager
 import com.tunc.androidlauncher.data.ThemeManager
 import com.tunc.androidlauncher.data.ThemeMode
-import com.tunc.androidlauncher.navigation.Screen
-import com.tunc.androidlauncher.ui.LauncherMainScreen
-import com.tunc.androidlauncher.ui.screens.launchersettings.applock.AppLockSettings
-import com.tunc.androidlauncher.ui.screens.launchersettings.LauncherSettings
-import com.tunc.androidlauncher.ui.screens.themesettings.ThemeSettings
+import com.tunc.androidlauncher.data.LocaleManager
 import com.tunc.androidlauncher.ui.theme.AndroidLauncherTheme
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Kayıtlı dil ayarını yükle
+        val localeManager = LocaleManager(this)
+        val savedLanguage = localeManager.getCurrentLanguage()
+        if (savedLanguage != LocaleManager.LANGUAGE_SYSTEM) {
+            localeManager.setLanguage(savedLanguage)
+        }
+
         enableEdgeToEdge()
         setContent {
             val themeManager = remember { ThemeManager(this) }
@@ -59,6 +61,22 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Uygulama background'a gittiğinde receiver'ı unregister etme
+        // Çünkü background'dayken de package değişikliklerini dinlemeliyiz
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // BroadcastReceiver'ı unregister et
+        try {
+            AppManager.getInstance(this).unregister()
+        } catch (e: Exception) {
+            // Ignore
         }
     }
 }

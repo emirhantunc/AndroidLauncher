@@ -11,9 +11,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tunc.androidlauncher.data.LayoutManager
+import com.tunc.androidlauncher.data.LauncherMode
 import com.tunc.androidlauncher.ui.screens.appdrawer.AppDrawer
 import com.tunc.androidlauncher.ui.screens.home.HomeScreen
 import kotlin.math.roundToInt
@@ -24,8 +28,11 @@ fun LauncherMainScreen(
     innerPadding: PaddingValues,
     onNavigateToSettings: () -> Unit
 ) {
+    val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
+    val layoutManager = remember { LayoutManager(context) }
+    val launcherMode by layoutManager.launcherModeFlow.collectAsStateWithLifecycle()
 
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
@@ -37,12 +44,13 @@ fun LauncherMainScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
+                .pointerInput(launcherMode) {
                     detectVerticalDragGestures(
                         onDragStart = {},
                         onDragEnd = {},
                         onVerticalDrag = { change, dragAmount ->
-                            if (offsetY == hiddenOffset && dragAmount < -20) {
+                            // AppDrawer modunda yukarı kaydırmaya izin ver
+                            if (launcherMode == LauncherMode.APP_DRAWER && offsetY == hiddenOffset && dragAmount < -20) {
                                 change.consume()
                                 offsetY = 0f
                             }
@@ -50,33 +58,39 @@ fun LauncherMainScreen(
                     )
                 }
         ) {
-            HomeScreen(innerPadding = innerPadding)
+            HomeScreen(
+                innerPadding = innerPadding,
+                onNavigateToSettings = if (launcherMode == LauncherMode.HOME_GRID) onNavigateToSettings else null
+            )
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .offset { IntOffset(0, offsetY.roundToInt()) }
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures(
-                        onDragEnd = {
-                            if (offsetY < screenHeightPx * 0.6f) {
-                                offsetY = 0f
-                            } else {
-                                offsetY = hiddenOffset
+        // AppDrawer sadece APP_DRAWER modunda gösterilir
+        if (launcherMode == LauncherMode.APP_DRAWER) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .offset { IntOffset(0, offsetY.roundToInt()) }
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures(
+                            onDragEnd = {
+                                if (offsetY < screenHeightPx * 0.6f) {
+                                    offsetY = 0f
+                                } else {
+                                    offsetY = hiddenOffset
+                                }
+                            },
+                            onVerticalDrag = { _, dragAmount ->
+                                val newOffset = (offsetY + dragAmount).coerceIn(0f, hiddenOffset)
+                                offsetY = newOffset
                             }
-                        },
-                        onVerticalDrag = { _, dragAmount ->
-                            val newOffset = (offsetY + dragAmount).coerceIn(0f, hiddenOffset)
-                            offsetY = newOffset
-                        }
-                    )
-                }
-        ) {
-            AppDrawer(
-                innerPadding = innerPadding,
-                onSettingsClick = onNavigateToSettings
-            )
+                        )
+                    }
+            ) {
+                AppDrawer(
+                    innerPadding = innerPadding,
+                    onSettingsClick = onNavigateToSettings
+                )
+            }
         }
     }
 }

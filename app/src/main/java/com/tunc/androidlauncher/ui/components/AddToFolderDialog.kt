@@ -1,6 +1,5 @@
 package com.tunc.androidlauncher.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,11 +13,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.tunc.androidlauncher.R
 import com.tunc.androidlauncher.data.database.AppFolder
-import kotlinx.coroutines.launch
 
 @Composable
 fun AddToFolderDialog(
@@ -46,7 +46,7 @@ fun AddToFolderDialog(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "$appName - Klasöre Ekle",
+                    text = stringResource(R.string.folder_add_to, appName),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = onBackgroundColor,
@@ -57,7 +57,7 @@ fun AddToFolderDialog(
 
                 ListItem(
                     headlineContent = {
-                        Text("Yeni Klasör Oluştur", color = primaryColor, fontWeight = FontWeight.Medium)
+                        Text(stringResource(R.string.folder_create_new), color = primaryColor, fontWeight = FontWeight.Medium)
                     },
                     leadingContent = {
                         Icon(
@@ -138,7 +138,7 @@ fun CreateFolderDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Yeni Klasör",
+                    text = stringResource(R.string.folder_new),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = onBackgroundColor
@@ -147,7 +147,7 @@ fun CreateFolderDialog(
                 OutlinedTextField(
                     value = folderName,
                     onValueChange = { folderName = it },
-                    label = { Text("Klasör Adı") },
+                    label = { Text(stringResource(R.string.folder_name_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -163,7 +163,7 @@ fun CreateFolderDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("İptal", color = onBackgroundColor)
+                        Text(stringResource(R.string.cancel), color = onBackgroundColor)
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -177,7 +177,7 @@ fun CreateFolderDialog(
                         colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
                         enabled = folderName.isNotBlank()
                     ) {
-                        Text("Oluştur")
+                        Text(stringResource(R.string.create))
                     }
                 }
             }

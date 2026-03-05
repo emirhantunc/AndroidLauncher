@@ -23,6 +23,9 @@ interface AppFolderDao {
     @Query("SELECT * FROM folder_apps WHERE folderId = :folderId")
     fun getAppsInFolder(folderId: Long): Flow<List<FolderApp>>
 
+    @Query("SELECT * FROM folder_apps WHERE folderId = :folderId")
+    suspend fun getAppsInFolderSync(folderId: Long): List<FolderApp>
+
     @Query("SELECT * FROM folder_apps WHERE packageName = :packageName LIMIT 1")
     suspend fun getFolderByPackageName(packageName: String): FolderApp?
 

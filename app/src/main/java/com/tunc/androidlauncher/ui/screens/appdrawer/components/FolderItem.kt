@@ -53,18 +53,6 @@ fun FolderItem(
                         fontSize = 24.sp
                     )
                 }
-                apps.size == 1 -> {
-                    apps[0].icon?.let { icon ->
-                        AsyncImage(
-                            model = icon,
-                            contentDescription = apps[0].name,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(18.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                }
                 else -> {
                     Box(modifier = Modifier.fillMaxSize()) {
                         val gridApps = apps.take(4)

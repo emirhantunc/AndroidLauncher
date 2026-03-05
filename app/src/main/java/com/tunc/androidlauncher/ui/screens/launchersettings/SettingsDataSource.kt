@@ -10,6 +10,10 @@ object SettingsDataSource {
             titleResId = R.string.settings_section_appearance,
             settings = listOf(
                 SettingModel(
+                    id = "launcher_mode",
+                    titleResId = R.string.settings_item_launcher_mode,
+                ),
+                SettingModel(
                     id = "theme",
                     titleResId = R.string.settings_item_theme,
                 ),
@@ -24,6 +28,10 @@ object SettingsDataSource {
                 SettingModel(
                     id = "font",
                     titleResId = R.string.settings_item_font,
+                ),
+                SettingModel(
+                    id = "language",
+                    titleResId = R.string.settings_item_language,
                 )
             )
         ),

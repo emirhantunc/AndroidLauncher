@@ -19,6 +19,7 @@ import androidx.compose.ui.text.TextStyle
 
 @Composable
 fun HomeSearchBar(
+    modifier: Modifier = Modifier,
     primary: Color = MaterialTheme.colorScheme.primary,
     onSurface: Color = MaterialTheme.colorScheme.onSurface,
     onSecondary: Color = MaterialTheme.colorScheme.onSecondary,
@@ -31,7 +32,7 @@ fun HomeSearchBar(
     OutlinedTextField(
         value = text,
         onValueChange = { text = it },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
 
         shape = RoundedCornerShape(12.dp),
 

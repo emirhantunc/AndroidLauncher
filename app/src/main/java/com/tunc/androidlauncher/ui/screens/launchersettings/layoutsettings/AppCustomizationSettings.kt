@@ -1,5 +1,6 @@
-package com.tunc.androidlauncher.ui.screens.layoutsettings
+package com.tunc.androidlauncher.ui.screens.launchersettings.layoutsettings
 
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -258,7 +259,7 @@ private fun CustomizeAppDialog(
         uri?.let {
             context.contentResolver.takePersistableUriPermission(
                 it,
-                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
             customIconUri = it.toString()
         }
