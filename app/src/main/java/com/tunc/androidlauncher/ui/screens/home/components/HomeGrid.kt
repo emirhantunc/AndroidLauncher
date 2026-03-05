@@ -3,7 +3,6 @@ package com.tunc.androidlauncher.ui.screens.home.components
 import android.content.Context
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -128,6 +127,13 @@ fun HomeGrid(
         val itemsPerPage = 20 // 4 sütun x 5 satır = 20 item
         val pageCount = ceil(combinedItems.size.toDouble() / itemsPerPage).toInt().coerceAtLeast(1)
         val pagerState = rememberPagerState(pageCount = { pageCount })
+
+        // Sayfa değiştiğinde edit mode'u kapat
+        LaunchedEffect(pagerState.currentPage) {
+            if (editMode) {
+                editMode = false
+            }
+        }
 
         Column(
             modifier = modifier.fillMaxSize(),
@@ -390,7 +396,6 @@ private fun HomeIconItem(
                 .size((iconSize + 28).dp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(backGround)
-                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
                 .clickable {
                     if (isLocked) {
                         showPinDialog = true
@@ -496,11 +501,10 @@ private fun HomeIconItemWithDrag(
                     .size((iconSize + 28).dp)
                     .clip(RoundedCornerShape(20.dp))
                     .background(backGround)
-                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
                     .combinedClickable(
                         onClick = {
-                            if (editMode || isDragging) {
-                                // Düzenleme modunda veya drag sırasında tıklama yapmaz
+                            if (isDragging) {
+                                // Drag sırasında tıklama yapmaz
                             } else if (isLocked) {
                                 showPinDialog = true
                             } else {

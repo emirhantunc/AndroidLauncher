@@ -125,6 +125,13 @@ fun AppDrawer(
         }
     }
 
+    // Scroll yaparken edit mode'u kapat
+    LaunchedEffect(gridState.isScrollInProgress) {
+        if (gridState.isScrollInProgress && editMode) {
+            editMode = false
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -146,9 +153,12 @@ fun AppDrawer(
             }
 
             LazyVerticalGrid(
-                columns = GridCells.Fixed(4), state = gridState, contentPadding = PaddingValues(
+                columns = GridCells.Fixed(4),
+                state = gridState,
+                contentPadding = PaddingValues(
                     bottom = 20.dp, start = 16.dp, end = 28.dp
-                ), modifier = Modifier.fillMaxSize()
+                ),
+                modifier = Modifier.fillMaxSize()
             ) {
                 if (recentApps.isNotEmpty()) {
                     item(span = { GridItemSpan(4) }) {
@@ -201,37 +211,6 @@ fun AppDrawer(
                                 onDeleteClick = {
                                     com.tunc.androidlauncher.utils.AppUninstaller.uninstallApp(context, app.packageName)
                                     editMode = false
-                                },
-                                onDragStart = {
-                                    draggedApp = app
-                                    hoveredApp = null
-                                },
-                                onDrag = { position ->
-                                    dragPosition = position
-
-                                    hoveredApp = appPositions.entries.find { (packageName, posSize) ->
-                                        packageName != app.packageName &&
-                                        position.x >= posSize.first.x &&
-                                        position.x <= posSize.first.x + posSize.second.width &&
-                                        position.y >= posSize.first.y &&
-                                        position.y <= posSize.first.y + posSize.second.height
-                                    }?.let { entry ->
-                                        allApps.find { it.packageName == entry.key }
-                                    }
-                                },
-                                onDragEnd = { position ->
-                                    hoveredApp?.let { hovered ->
-                                        if (hovered.packageName != app.packageName) {
-                                            appsToFolder = Pair(app, hovered)
-                                            showCreateFolderDialog = true
-                                        }
-                                    }
-                                    draggedApp = null
-                                    hoveredApp = null
-                                },
-                                onDragCancel = {
-                                    draggedApp = null
-                                    hoveredApp = null
                                 }
                             )
                         }
