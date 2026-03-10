@@ -20,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.tunc.androidlauncher.data.AppLockManager
+import com.tunc.androidlauncher.data.BottomBarManager
 import com.tunc.androidlauncher.data.LauncherMode
 import com.tunc.androidlauncher.data.LayoutManager
 import com.tunc.androidlauncher.data.WallpaperManager
@@ -28,6 +29,7 @@ import com.tunc.androidlauncher.ui.screens.home.components.HomeGrid
 import com.tunc.androidlauncher.ui.screens.home.components.HomeSearchBar
 import com.tunc.androidlauncher.ui.screens.home.components.LockScreenClock
 import com.tunc.androidlauncher.ui.screens.home.viewmodels.HomeViewModel
+import kotlinx.coroutines.launch
 import kotlin.collections.isNotEmpty
 
 
@@ -44,6 +46,9 @@ fun HomeScreen(
     val appLockManager = remember { AppLockManager(context) }
     val wallpaperManager = remember { WallpaperManager(context) }
     val layoutManager = remember { LayoutManager(context) }
+    val bottomBarManager = remember { BottomBarManager(context) }
+    val coroutineScope = rememberCoroutineScope()
+
     val wallpaperUri by wallpaperManager.wallpaperUriFlow.collectAsStateWithLifecycle()
     val iconSize by layoutManager.iconSizeFlow.collectAsStateWithLifecycle()
     val launcherMode by layoutManager.launcherModeFlow.collectAsStateWithLifecycle()
@@ -53,7 +58,22 @@ fun HomeScreen(
     }
 
     val gridApps by viewModel.gridApps.collectAsStateWithLifecycle()
-    val dockApps = gridApps
+    val bottomBarPackages by bottomBarManager.bottomBarAppsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
+
+    // Eğer bottom bar uygulamaları boşsa, rastgele 4 uygulama seç
+    LaunchedEffect(bottomBarPackages, gridApps) {
+        if (bottomBarPackages.isEmpty() && gridApps.isNotEmpty()) {
+            val randomApps = bottomBarManager.getRandomBottomBarApps(gridApps, 4)
+            bottomBarManager.setBottomBarApps(randomApps)
+        }
+    }
+
+    // Bottom bar için uygulamaları filtrele
+    val bottomBarApps = remember(bottomBarPackages, gridApps) {
+        bottomBarPackages.mapNotNull { packageName ->
+            gridApps.find { it.packageName == packageName }
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -127,12 +147,19 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            BottomBar(
-                apps = dockApps.take(4),
-                context = context,
-                appLockManager = appLockManager,
-                iconSize = iconSize.bottomBarSize
-            )
+            if (bottomBarApps.isNotEmpty()) {
+                BottomBar(
+                    apps = bottomBarApps.take(4),
+                    context = context,
+                    appLockManager = appLockManager,
+                    iconSize = iconSize.bottomBarSize,
+                    onAppsReordered = { reorderedApps ->
+                        coroutineScope.launch {
+                            bottomBarManager.setBottomBarApps(reorderedApps.map { it.packageName })
+                        }
+                    }
+                )
+            }
         }
     }
 }

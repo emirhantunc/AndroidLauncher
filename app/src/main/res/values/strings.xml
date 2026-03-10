@@ -17,28 +17,14 @@
 
 
     <string name="settings_section_appearance">APPEARANCE</string>
-    <string name="settings_section_gestures">GESTURES</string>
     <string name="settings_section_privacy">PRIVACY</string>
-    <string name="settings_section_system">SYSTEM</string>
 
     <string name="settings_item_theme">Wallpaper &amp; Theme</string>
     <string name="settings_item_grid_size">Layout</string>
-    <string name="settings_item_icons">Icon Pack</string>
-    <string name="settings_item_font">Font Style</string>
     <string name="settings_item_language">Language</string>
-    <string name="settings_item_launcher_mode">Launcher Mode</string>
-
-    <string name="settings_item_double_tap">Double Tap</string>
-    <string name="settings_item_swipe_up">Swipe Up</string>
-    <string name="settings_item_swipe_down">Swipe Down</string>
 
     <string name="settings_item_hidden_apps">Hidden Apps</string>
     <string name="settings_item_app_lock">App Lock</string>
-    <string name="settings_item_secure_vault">Secure Vault</string>
-
-    <string name="settings_item_backup">Backup &amp; Restore</string>
-    <string name="settings_item_about">About Launcher</string>
-    <string name="settings_item_restart">Restart Launcher</string>
 
     <!-- App Lock Screen -->
     <string name="app_lock_title">App Lock</string>
@@ -111,6 +97,7 @@
     <string name="delete_app_title">Delete App</string>
     <string name="delete_app_message">Do you want to uninstall %s?</string>
     <string name="delete">Delete</string>
+    <string name="delete_app">Delete App</string>
 
 
 </resources>

@@ -30,7 +30,6 @@ import com.tunc.androidlauncher.ui.components.AddToFolderDialog
 import com.tunc.androidlauncher.ui.components.FolderDialog
 import com.tunc.androidlauncher.ui.components.RenameFolderDialog
 import com.tunc.androidlauncher.ui.screens.appdrawer.components.AlphabetSidebar
-import com.tunc.androidlauncher.ui.screens.appdrawer.components.AppItem
 import com.tunc.androidlauncher.ui.screens.appdrawer.components.DraggableAppItem
 import com.tunc.androidlauncher.ui.screens.appdrawer.components.FolderItem
 import com.tunc.androidlauncher.ui.screens.appdrawer.components.RecentAppsSection
@@ -52,12 +51,17 @@ fun AppDrawer(
     val layoutManager = remember { LayoutManager(context) }
     val folderManager = remember { FolderManager(context) }
     var appList by remember { mutableStateOf<Map<String, List<AppInfo>>>(emptyMap()) }
-    var foldersByLetter by remember { mutableStateOf<Map<String, List<com.tunc.androidlauncher.data.database.FolderWithApps>>>(emptyMap()) }
+    var foldersByLetter by remember {
+        mutableStateOf<Map<String, List<com.tunc.androidlauncher.data.database.FolderWithApps>>>(
+            emptyMap()
+        )
+    }
     val allApps by appManager.allApps.collectAsStateWithLifecycle()
     val recentPackages by recentAppsManager.recentAppsFlow.collectAsStateWithLifecycle()
     val hiddenPackages by hiddenAppsManager.hiddenAppsFlow.collectAsStateWithLifecycle()
     val iconSize by layoutManager.iconSizeFlow.collectAsStateWithLifecycle()
-    val foldersWithApps by folderManager.getFoldersWithApps().collectAsStateWithLifecycle(initialValue = emptyList())
+    val foldersWithApps by folderManager.getFoldersWithApps()
+        .collectAsStateWithLifecycle(initialValue = emptyList())
     val letterIndexMap = remember { mutableStateMapOf<String, Int>() }
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
@@ -70,8 +74,11 @@ fun AppDrawer(
     // Edit mode state
     var editMode by remember { mutableStateOf(false) }
 
+    // Selected app for context menu
+    var selectedAppForContext by remember { mutableStateOf<AppInfo?>(null) }
+
     var draggedApp by remember { mutableStateOf<AppInfo?>(null) }
-    var dragPosition by remember { mutableStateOf(Offset.Zero) }
+    var dragPosition = Offset.Zero
     val appPositions = remember { mutableStateMapOf<String, Pair<Offset, IntSize>>() }
     var hoveredApp by remember { mutableStateOf<AppInfo?>(null) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
@@ -93,11 +100,13 @@ fun AppDrawer(
 
     LaunchedEffect(allApps, hiddenPackages, foldersWithApps) {
         if (allApps.isNotEmpty()) {
-            val appsInFolders = foldersWithApps.flatMap { it.apps.map { app -> app.packageName } }.toSet()
+            val appsInFolders =
+                foldersWithApps.flatMap { it.apps.map { app -> app.packageName } }.toSet()
             val visibleApps = allApps.filter {
                 !hiddenPackages.contains(it.packageName) && !appsInFolders.contains(it.packageName)
             }
-            val grouped = visibleApps.sortedBy { it.name.lowercase() }.groupBy { it.name.firstOrNull()?.uppercase() ?: "#" }
+            val grouped = visibleApps.sortedBy { it.name.lowercase() }
+                .groupBy { it.name.firstOrNull()?.uppercase() ?: "#" }
             appList = grouped
 
             val foldersGrouped = foldersWithApps
@@ -125,7 +134,6 @@ fun AppDrawer(
         }
     }
 
-    // Scroll yaparken edit mode'u kapat
     LaunchedEffect(gridState.isScrollInProgress) {
         if (gridState.isScrollInProgress && editMode) {
             editMode = false
@@ -193,7 +201,7 @@ fun AppDrawer(
                     }
 
                     val appsInLetter = appList[letter] ?: emptyList()
-                    items(appsInLetter) { app ->
+                    items(appsInLetter, key = { app -> app.packageName }) { app ->
                         Box(
                             modifier = Modifier.onGloballyPositioned { coordinates ->
                                 appPositions[app.packageName] = Pair(
@@ -209,8 +217,62 @@ fun AppDrawer(
                                 editMode = editMode,
                                 onEditModeChange = { editMode = it },
                                 onDeleteClick = {
-                                    com.tunc.androidlauncher.utils.AppUninstaller.uninstallApp(context, app.packageName)
+                                    com.tunc.androidlauncher.utils.AppUninstaller.uninstallApp(
+                                        context,
+                                        app.packageName
+                                    )
                                     editMode = false
+                                },
+                                isSelected = selectedAppForContext == app,
+                                isHovered = hoveredApp == app,
+                                onSelect = {
+                                    selectedAppForContext = app
+                                },
+                                onDeselect = {
+                                    selectedAppForContext = null
+                                },
+                                onDragStart = { position ->
+                                    draggedApp = app
+                                    dragPosition = position
+                                    hoveredApp = null
+                                },
+                                onDrag = { currentPos ->
+                                    dragPosition = currentPos
+
+                                    // Hangi app üzerinde olduğumuzu kontrol et
+                                    var foundHover: AppInfo? = null
+                                    appPositions.entries.forEach { (packageName, positionSize) ->
+                                        if (packageName != app.packageName) {
+                                            val (appPos, appSize) = positionSize
+
+                                            // Icon merkezini hesapla
+                                            val iconCenterX = appPos.x + appSize.width / 2
+                                            val iconCenterY = appPos.y + appSize.height / 2
+
+                                            // Drag edilen uygulama merkezi bu icon'un alanında mı?
+                                            val isOverApp = currentPos.x >= appPos.x &&
+                                                    currentPos.x <= appPos.x + appSize.width &&
+                                                    currentPos.y >= appPos.y &&
+                                                    currentPos.y <= appPos.y + appSize.height
+
+                                            if (isOverApp) {
+                                                foundHover =
+                                                    allApps.find { it.packageName == packageName }
+                                            }
+                                        }
+                                    }
+                                    hoveredApp = foundHover
+                                },
+                                onDragEnd = {
+                                    // Eğer bir app üzerinde bırakıldıysa, klasör oluştur
+                                    if (hoveredApp != null && draggedApp != null) {
+                                        appsToFolder = Pair(draggedApp!!, hoveredApp!!)
+                                        showCreateFolderDialog = true
+                                    }
+
+                                    draggedApp = null
+                                    hoveredApp = null
+                                    dragPosition = Offset.Zero
                                 }
                             )
                         }
@@ -243,7 +305,8 @@ fun AppDrawer(
                 onDismiss = { selectedFolder = null },
                 onAppClick = { app ->
                     recentAppsManager.addRecentApp(app.packageName)
-                    val launchIntent = context.packageManager.getLaunchIntentForPackage(app.packageName)
+                    val launchIntent =
+                        context.packageManager.getLaunchIntentForPackage(app.packageName)
                     launchIntent?.let { intent -> context.startActivity(intent) }
                     selectedFolder = null
                 },
@@ -280,7 +343,8 @@ fun AppDrawer(
     }
 
     if (showCreateFolderDialog && appsToFolder != null) {
-        val suggestedCategory = folderManager.getCategoryForPackage(appsToFolder!!.first.packageName)
+        val suggestedCategory =
+            folderManager.getCategoryForPackage(appsToFolder!!.first.packageName)
 
         com.tunc.androidlauncher.ui.components.CreateFolderDialog(
             onDismiss = {
@@ -302,7 +366,8 @@ fun AppDrawer(
     }
 
     if (showAddToFolderDialog && selectedApp != null) {
-        val allFolders by folderManager.getAllFolders().collectAsStateWithLifecycle(initialValue = emptyList())
+        val allFolders by folderManager.getAllFolders()
+            .collectAsStateWithLifecycle(initialValue = emptyList())
 
         AddToFolderDialog(
             appName = selectedApp!!.name,
@@ -315,7 +380,10 @@ fun AppDrawer(
             onCreateNewFolder = { folderName ->
                 coroutineScope.launch {
                     selectedApp?.let { app ->
-                        val finalName = if (folderName.isNotBlank()) folderName else folderManager.getCategoryForPackage(app.packageName)
+                        val finalName =
+                            if (folderName.isNotBlank()) folderName else folderManager.getCategoryForPackage(
+                                app.packageName
+                            )
                         val folderId = folderManager.createFolder(finalName)
                         folderManager.addAppToFolder(folderId, app.packageName)
                     }

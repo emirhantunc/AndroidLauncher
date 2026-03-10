@@ -1,5 +1,8 @@
 package com.tunc.androidlauncher
 
+import HiddenAppsSettings
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
@@ -11,12 +14,12 @@ import com.tunc.androidlauncher.navigation.Screen
 import com.tunc.androidlauncher.ui.LauncherMainScreen
 import com.tunc.androidlauncher.ui.screens.launchersettings.LauncherSettings
 import com.tunc.androidlauncher.ui.screens.launchersettings.applock.AppLockSettings
-import com.tunc.androidlauncher.ui.screens.launchersettings.hiddenapps.HiddenAppsSettings
 import com.tunc.androidlauncher.ui.screens.launchersettings.languagesettings.LanguageSettings
 import com.tunc.androidlauncher.ui.screens.launchersettings.layoutsettings.AppCustomizationSettings
 import com.tunc.androidlauncher.ui.screens.launchersettings.layoutsettings.LayoutSettings
 import com.tunc.androidlauncher.ui.screens.themesettings.ThemeSettings
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavigation(
     navController: NavHostController,

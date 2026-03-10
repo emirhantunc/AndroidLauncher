@@ -25,7 +25,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Kayıtlı dil ayarını yükle
         val localeManager = LocaleManager(this)
         val savedLanguage = localeManager.getCurrentLanguage()
         if (savedLanguage != LocaleManager.LANGUAGE_SYSTEM) {
@@ -66,17 +65,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        // Uygulama background'a gittiğinde receiver'ı unregister etme
-        // Çünkü background'dayken de package değişikliklerini dinlemeliyiz
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // BroadcastReceiver'ı unregister et
         try {
             AppManager.getInstance(this).unregister()
         } catch (e: Exception) {
-            // Ignore
         }
     }
 }

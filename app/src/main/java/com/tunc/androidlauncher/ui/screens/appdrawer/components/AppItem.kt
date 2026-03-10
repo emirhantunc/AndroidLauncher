@@ -2,7 +2,6 @@ package com.tunc.androidlauncher.ui.screens.appdrawer.components
 
 import android.content.Context
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,11 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import com.tunc.androidlauncher.core.models.AppInfo
 import com.tunc.androidlauncher.data.AppLockManager
@@ -37,11 +36,7 @@ fun AppItem(
     app: AppInfo,
     appLockManager: AppLockManager? = null,
     onLongClick: (() -> Unit)? = null,
-    iconSize: Int = 40,
-    bgColor: Color = MaterialTheme.colorScheme.background,
-    labelSmall: TextStyle = MaterialTheme.typography.labelSmall,
-    onBackGround : Color = MaterialTheme.colorScheme.onBackground,
-    onSurface: Color = MaterialTheme.colorScheme.onSurface
+    iconSize: Int = 40
 ) {
     val context = LocalContext.current
     var showPinDialog by remember { mutableStateOf(false) }
@@ -68,7 +63,7 @@ fun AppItem(
             modifier = Modifier
                 .size((iconSize + 20).dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(bgColor),
+                .background(Color.Transparent),
             contentAlignment = Alignment.Center
         ) {
             app.icon?.let { icon ->
@@ -81,7 +76,7 @@ fun AppItem(
                     contentScale = ContentScale.Crop
                 )
             } ?: run {
-                Text(app.label.take(1), color = onSurface, fontWeight = FontWeight.Bold)
+                Text(app.label.take(1), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
             }
 
             if (app.notificationCount > 0) {
@@ -96,8 +91,8 @@ fun AppItem(
 
         Text(
             text = app.name,
-            color = onBackGround,
-            style = labelSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.labelSmall,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.width(64.dp)
         )

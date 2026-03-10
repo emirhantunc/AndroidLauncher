@@ -10,9 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -26,10 +24,7 @@ fun FolderItem(
     folderName: String,
     apps: List<AppInfo>,
     onClick: () -> Unit,
-    iconSize: Int = 40,
-    bgColor: Color = MaterialTheme.colorScheme.background,
-    labelSmall: TextStyle = MaterialTheme.typography.labelSmall,
-    onBackGround: Color = MaterialTheme.colorScheme.onBackground
+    iconSize: Int = 40
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -41,14 +36,14 @@ fun FolderItem(
             modifier = Modifier
                 .size((iconSize + 20).dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(bgColor),
+                .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
             when {
                 apps.isEmpty() -> {
                     Text(
                         text = folderName.take(1).uppercase(),
-                        color = onBackGround,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp
                     )
@@ -89,8 +84,8 @@ fun FolderItem(
 
         Text(
             text = folderName,
-            style = labelSmall,
-            color = onBackGround,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,

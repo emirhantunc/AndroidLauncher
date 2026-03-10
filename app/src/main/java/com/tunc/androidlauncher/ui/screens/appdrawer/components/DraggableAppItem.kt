@@ -3,7 +3,8 @@ package com.tunc.androidlauncher.ui.screens.appdrawer.components
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,23 +17,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.tunc.androidlauncher.core.models.AppInfo
 import com.tunc.androidlauncher.data.AppLockManager
 import com.tunc.androidlauncher.data.RecentAppsManager
+import com.tunc.androidlauncher.ui.components.AppContextMenu
 import com.tunc.androidlauncher.ui.components.NotificationBadge
 import com.tunc.androidlauncher.ui.screens.launchersettings.applock.components.PinVerificationDialog
 import com.tunc.androidlauncher.utils.AppUninstaller
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -40,42 +46,105 @@ fun DraggableAppItem(
     app: AppInfo,
     appLockManager: AppLockManager? = null,
     iconSize: Int = 40,
-    bgColor: Color = MaterialTheme.colorScheme.background,
-    labelSmall: TextStyle = MaterialTheme.typography.labelSmall,
-    onBackGround: Color = MaterialTheme.colorScheme.onBackground,
-    onSurface: Color = MaterialTheme.colorScheme.onSurface,
     editMode: Boolean = false,
     onEditModeChange: (Boolean) -> Unit = {},
-    onDeleteClick: () -> Unit = {}
+    onDeleteClick: () -> Unit = {},
+    onDragStart: (Offset) -> Unit = {},
+    onDrag: (Offset) -> Unit = {},
+    onDragEnd: () -> Unit = {},
+    isSelected: Boolean = false,
+    onSelect: () -> Unit = {},
+    onDeselect: () -> Unit = {},
+    isHovered: Boolean = false
 ) {
     val context = LocalContext.current
     var showPinDialog by remember { mutableStateOf(false) }
     val isLocked = appLockManager?.isAppLocked(app.packageName) == true && appLockManager.isPinSet()
+    var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    var isDragging by remember { mutableStateOf(false) }
+    var itemPosition by remember { mutableStateOf(Offset.Zero) }
+    var showContextMenu by remember { mutableStateOf(false) }
+    var hasDragged by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
-            .onGloballyPositioned { /* Pozisyon tracking artık gerekmiyor */ }
+            .onGloballyPositioned { coordinates ->
+                itemPosition = coordinates.positionInRoot()
+            }
+            .offset {
+                IntOffset(
+                    dragOffset.x.roundToInt(),
+                    dragOffset.y.roundToInt()
+                )
+            }
+            .graphicsLayer {
+                scaleX = if (isDragging || isSelected) 1.15f else if (isHovered) 1.08f else 1f
+                scaleY = if (isDragging || isSelected) 1.15f else if (isHovered) 1.08f else 1f
+                alpha = if (isDragging) 0.8f else 1f
+                shadowElevation = if (isDragging) 16f else if (isSelected) 12f else if (isHovered) 6f else 0f
+                translationY = if (isSelected && !isDragging) -8f else 0f
+            }
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .padding(bottom = 16.dp)
-                .combinedClickable(
-                    onClick = {
-                        if (editMode) {
-                            // Edit modunda uygulamayı açma, sadece izin ver
-                            // Edit mode'dan çıkmak için başka bir mekanizma kullanılacak
-                        } else if (isLocked) {
-                            showPinDialog = true
-                        } else {
-                            launchApp(context, app.packageName)
+                .pointerInput(editMode) {
+                    detectTapGestures(
+                        onTap = {
+                            if (editMode) {
+                                onEditModeChange(false)
+                            } else if (showContextMenu) {
+                                showContextMenu = false
+                                onDeselect()
+                            } else if (isLocked) {
+                                showPinDialog = true
+                            } else {
+                                launchApp(context, app.packageName)
+                            }
                         }
-                    },
-                    onLongClick = {
-                        // Long press ile edit mode'a geç
-                        onEditModeChange(true)
-                    }
-                )
+                    )
+                }
+                .pointerInput(Unit) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = {
+                            hasDragged = false
+                            isDragging = true
+                            dragOffset = Offset.Zero
+                            showContextMenu = false
+                            onSelect()
+                            onDragStart(itemPosition)
+                        },
+                        onDrag = { change, offset ->
+                            change.consume()
+                            dragOffset += offset
+                            if (dragOffset.getDistance() > 20f) {
+                                hasDragged = true
+                            }
+                            if (hasDragged) {
+                                onDrag(itemPosition + dragOffset)
+                            }
+                        },
+                        onDragEnd = {
+                            isDragging = false
+                            if (hasDragged) {
+                                onDragEnd()
+                                onDeselect()
+                            } else {
+                                showContextMenu = true
+                            }
+                            dragOffset = Offset.Zero
+                            hasDragged = false
+                        },
+                        onDragCancel = {
+                            isDragging = false
+                            dragOffset = Offset.Zero
+                            hasDragged = false
+                            onDeselect()
+                            showContextMenu = false
+                        }
+                    )
+                }
         ) {
             // App icon ve silme butonu
             Box(contentAlignment = Alignment.TopStart) {
@@ -96,7 +165,7 @@ fun DraggableAppItem(
                             contentScale = ContentScale.Crop
                         )
                     } ?: run {
-                        Text(app.label.take(1), color = onSurface, fontWeight = FontWeight.Bold)
+                        Text(app.label.take(1), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                     }
 
                     if (app.notificationCount > 0 && !editMode) {
@@ -107,9 +176,7 @@ fun DraggableAppItem(
                     }
                 }
 
-                // Silme butonu - Icon'un sol üst köşesinde
-                // Sadece sistem uygulaması olmayanlar için göster
-                if (editMode && !AppUninstaller.isSystemApp(context, app.packageName)) {
+                if (editMode) {
                     Box(
                         modifier = Modifier
                             .offset(x = 2.dp, y = 2.dp)
@@ -127,14 +194,29 @@ fun DraggableAppItem(
                         )
                     }
                 }
+
+                // Context Menu - icon'un sol üstünde
+                if (showContextMenu && isSelected) {
+                    AppContextMenu(
+                        onDismiss = {
+                            showContextMenu = false
+                            onDeselect()
+                        },
+                        onDelete = {
+                            AppUninstaller.uninstallApp(context, app.packageName)
+                            showContextMenu = false
+                            onDeselect()
+                        }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = app.name,
-                style = labelSmall,
-                color = onBackGround,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
@@ -142,6 +224,7 @@ fun DraggableAppItem(
             )
         }
     }
+
 
     if (showPinDialog && appLockManager != null) {
         PinVerificationDialog(

@@ -1,21 +1,24 @@
-package com.tunc.androidlauncher.ui.screens.launchersettings.hiddenapps
-
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +32,7 @@ import com.tunc.androidlauncher.core.models.AppInfo
 import com.tunc.androidlauncher.data.AppManager
 import com.tunc.androidlauncher.data.HiddenAppsManager
 import kotlin.math.roundToInt
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,19 +54,34 @@ fun HiddenAppsSettings(
     val allApps by appManager.allApps.collectAsStateWithLifecycle()
     val hiddenPackages by hiddenAppsManager.hiddenAppsFlow.collectAsStateWithLifecycle()
     var currentTab by remember { mutableStateOf(HiddenAppsTab.ALL_APPS) }
+    var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         appManager.loadApps()
     }
 
-    val hiddenApps = remember(hiddenPackages, allApps) {
-        hiddenPackages.mapNotNull { packageName ->
+    val hiddenApps = remember(hiddenPackages, allApps, searchQuery) {
+        val filtered = hiddenPackages.mapNotNull { packageName ->
             allApps.find { it.packageName == packageName }
+        }
+        if (searchQuery.isEmpty()) {
+            filtered
+        } else {
+            filtered.filter {
+                it.name.lowercase(Locale.getDefault()).contains(searchQuery.lowercase(Locale.getDefault()))
+            }
         }
     }
 
-    val visibleApps = remember(hiddenPackages, allApps) {
-        allApps.filter { !hiddenPackages.contains(it.packageName) }
+    val visibleApps = remember(hiddenPackages, allApps, searchQuery) {
+        val filtered = allApps.filter { !hiddenPackages.contains(it.packageName) }
+        if (searchQuery.isEmpty()) {
+            filtered
+        } else {
+            filtered.filter {
+                it.name.lowercase(Locale.getDefault()).contains(searchQuery.lowercase(Locale.getDefault()))
+            }
+        }
     }
 
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -125,6 +144,66 @@ fun HiddenAppsSettings(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Arama barı
+            BasicTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(surface)
+                    .border(1.dp, onBackground.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = onBackground),
+                cursorBrush = SolidColor(primary),
+                singleLine = true,
+                decorationBox = { innerTextField ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = onBackground.copy(alpha = 0.6f),
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (searchQuery.isEmpty()) {
+                                Text(
+                                    text = "Search apps...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = onBackground.copy(alpha = 0.4f)
+                                )
+                            }
+                            innerTextField()
+                        }
+
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(
+                                onClick = { searchQuery = "" },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear",
+                                    tint = onBackground.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             TabRow(
                 selectedTabIndex = currentTab.ordinal,
@@ -332,7 +411,7 @@ private fun AppItemRow(
             }
 
             Text(
-                text = app.label,
+                text = app.name,
                 style = bodyMedium,
                 color = onBackground,
                 fontWeight = FontWeight.Medium

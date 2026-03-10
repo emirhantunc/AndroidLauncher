@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">AndroidLauncher</string>
 
-    <string name="search_apps_place_holder">Uygulama ara...</string>
+    <string name="search_apps_place_holder">Uygulama ara…</string>
     <string name="recently_used">SON KULLANILAN</string>
     <string name="recent_apps">Son Uygulamalar</string>
 
@@ -13,32 +13,18 @@
 
 
     <string name="settings">Ayarlar</string>
-    <string name="search_settings">Ayarlarda ara...</string>
+    <string name="search_settings">Ayarlarda ara…</string>
 
 
     <string name="settings_section_appearance">GÖRÜNÜM</string>
-    <string name="settings_section_gestures">HAREKETLER</string>
     <string name="settings_section_privacy">GİZLİLİK</string>
-    <string name="settings_section_system">SİSTEM</string>
 
     <string name="settings_item_theme">Duvar Kağıdı &amp; Tema</string>
     <string name="settings_item_grid_size">Düzen</string>
-    <string name="settings_item_icons">İkon Paketi</string>
-    <string name="settings_item_font">Yazı Tipi</string>
     <string name="settings_item_language">Dil</string>
-    <string name="settings_item_launcher_mode">Başlatıcı Modu</string>
-
-    <string name="settings_item_double_tap">Çift Dokunma</string>
-    <string name="settings_item_swipe_up">Yukarı Kaydır</string>
-    <string name="settings_item_swipe_down">Aşağı Kaydır</string>
 
     <string name="settings_item_hidden_apps">Gizli Uygulamalar</string>
     <string name="settings_item_app_lock">Uygulama Kilidi</string>
-    <string name="settings_item_secure_vault">Güvenli Kasa</string>
-
-    <string name="settings_item_backup">Yedekleme &amp; Geri Yükleme</string>
-    <string name="settings_item_about">Launcher Hakkında</string>
-    <string name="settings_item_restart">Launcher\'ı Yeniden Başlat</string>
 
     <!-- App Lock Screen -->
     <string name="app_lock_title">Uygulama Kilidi</string>
@@ -111,6 +97,7 @@
     <string name="delete_app_title">Uygulamayı Sil</string>
     <string name="delete_app_message">%s uygulamasını kaldırmak istiyor musunuz?</string>
     <string name="delete">Sil</string>
+    <string name="delete_app">Uygulamayı Sil</string>
 
 
 </resources>
