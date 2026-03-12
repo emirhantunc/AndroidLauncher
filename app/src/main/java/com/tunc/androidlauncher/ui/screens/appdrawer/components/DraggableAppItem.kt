@@ -81,7 +81,6 @@ fun DraggableAppItem(
                 scaleX = if (isDragging || isSelected) 1.15f else if (isHovered) 1.08f else 1f
                 scaleY = if (isDragging || isSelected) 1.15f else if (isHovered) 1.08f else 1f
                 alpha = if (isDragging) 0.8f else 1f
-                shadowElevation = if (isDragging) 16f else if (isSelected) 12f else if (isHovered) 6f else 0f
                 translationY = if (isSelected && !isDragging) -8f else 0f
             }
     ) {

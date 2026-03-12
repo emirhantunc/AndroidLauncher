@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tunc.androidlauncher.core.models.AppInfo
 import com.tunc.androidlauncher.data.AppManager
+import com.tunc.androidlauncher.data.AppPlacementManager
 import com.tunc.androidlauncher.data.HiddenAppsManager
 import com.tunc.androidlauncher.data.LauncherMode
 import com.tunc.androidlauncher.data.LayoutManager
@@ -16,8 +17,13 @@ import kotlinx.coroutines.launch
 
 
 class HomeViewModel : ViewModel() {
+    /** Grid'de gösterilecek uygulamalar (placement index sırasına göre, index >= 4) */
     private val _gridApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val gridApps = _gridApps.asStateFlow()
+
+    /** Bottom bar uygulamaları (placement index sırasına göre, index 0-3) */
+    private val _bottomBarApps = MutableStateFlow<List<AppInfo>>(emptyList())
+    val bottomBarApps = _bottomBarApps.asStateFlow()
 
     private var isObserving = false
 
@@ -27,31 +33,56 @@ class HomeViewModel : ViewModel() {
             val launcherMode = layoutManager.getLauncherMode()
 
             if (launcherMode == LauncherMode.HOME_GRID) {
-                // HOME_GRID modunda tüm uygulamaları yükle
                 val appManager = AppManager.getInstance(context)
                 val hiddenAppsManager = HiddenAppsManager(context)
+                val placementManager = AppPlacementManager.getInstance(context)
                 appManager.loadApps()
 
-                // İlk kez yükleme
-                val allApps = appManager.allApps.value
-                val hiddenPackages = hiddenAppsManager.hiddenAppsFlow.value
+                // İlk kurulum: placement tablosu boşsa dolduralım
+                val visibleApps = appManager.allApps.value
+                    .filter { !hiddenAppsManager.hiddenAppsFlow.value.contains(it.packageName) }
+                placementManager.initializeIfNeeded(visibleApps)
 
-                _gridApps.value = allApps
-                    .filter { !hiddenPackages.contains(it.packageName) }
-                    .sortedBy { it.name.lowercase() }
-
-                // Flow'u dinle - uygulama eklenince/silinince otomatik güncelle
+                // Flow'u dinle
                 if (!isObserving) {
                     isObserving = true
                     viewModelScope.launch {
                         combine(
                             appManager.allApps,
-                            hiddenAppsManager.hiddenAppsFlow
-                        ) { apps, hidden ->
-                            apps.filter { !hidden.contains(it.packageName) }
-                                .sortedBy { it.name.lowercase() }
-                        }.collect { filteredApps ->
-                            _gridApps.value = filteredApps
+                            hiddenAppsManager.hiddenAppsFlow,
+                            placementManager.allPlacementsFlow
+                        ) { apps, hidden, placements ->
+                            val visibleApps2 = apps.filter { !hidden.contains(it.packageName) }
+                            val placementMap = placements.associateBy { it.packageName }
+
+                            // Bottom bar (index 0-3)
+                            val bottomBar = placements
+                                .filter { it.sortIndex in 0..AppPlacementManager.BOTTOM_BAR_MAX_INDEX }
+                                .sortedBy { it.sortIndex }
+                                .mapNotNull { placement ->
+                                    visibleApps2.find { it.packageName == placement.packageName }
+                                }
+
+                            // Grid (index >= 4)
+                            val grid = placements
+                                .filter { it.sortIndex >= AppPlacementManager.GRID_START_INDEX }
+                                .sortedBy { it.sortIndex }
+                                .mapNotNull { placement ->
+                                    visibleApps2.find { it.packageName == placement.packageName }
+                                }
+
+                            // Placement'ı olmayan yeni uygulamaları da grid sonuna ekle
+                            val placedPackages = placementMap.keys
+                            val unplaced = visibleApps2.filter { it.packageName !in placedPackages }
+
+                            Triple(bottomBar, grid + unplaced, visibleApps2)
+                        }.collect { (bottomBar, grid, allVisible) ->
+                            _bottomBarApps.value = bottomBar
+                            _gridApps.value = grid
+
+                            // Yeni uygulamaları sync et
+                            val placementManager2 = AppPlacementManager.getInstance(context)
+                            placementManager2.initializeIfNeeded(allVisible)
                         }
                     }
                 }
@@ -59,6 +90,7 @@ class HomeViewModel : ViewModel() {
                 // APP_DRAWER modunda sadece belirli uygulamaları göster
                 HomeApps.loadAppsIfNeeded(context)
                 _gridApps.value = HomeApps.cachedGridApps
+                _bottomBarApps.value = HomeApps.cachedDockApps
             }
         }
     }

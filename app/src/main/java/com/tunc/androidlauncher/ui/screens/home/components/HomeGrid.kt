@@ -81,7 +81,12 @@ fun HomeGrid(
     modifier: Modifier = Modifier,
     appLockManager: AppLockManager? = null,
     iconSize: Int = 36,
-    isFullScreen: Boolean = false
+    isFullScreen: Boolean = false,
+    bottomBarBounds: androidx.compose.ui.geometry.Rect? = null,
+    onAppDroppedToBottomBar: ((AppInfo) -> Unit)? = null,
+    onDragOverlayStart: ((AppInfo, Offset, Int) -> Unit)? = null,
+    onDragOverlayMove: ((Offset) -> Unit)? = null,
+    onDragOverlayEnd: (() -> Unit)? = null
 ) {
     val folderManager = remember { FolderManager(context) }
     val appManager = remember { AppManager.getInstance(context) }
@@ -135,7 +140,8 @@ fun HomeGrid(
         val itemHeightDp = iconSize + 28 + 12 + 16 + 16
 
         BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-            val availableHeightDp = maxHeight.value
+            // Sayfa göstergeleri (dots) için ayrılacak fiziksel alan kadarını kullanılabilir yükseklikten çıkarıyoruz
+            val availableHeightDp = maxHeight.value - 8f 
             val rowsPerPage = (availableHeightDp / itemHeightDp).toInt().coerceAtLeast(1)
             val itemsPerPage = columns * rowsPerPage
             val pageCount =
@@ -169,7 +175,7 @@ fun HomeGrid(
                     state = pagerState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(bottom = if (pageCount > 1) 24.dp else 0.dp)
+                        .padding(bottom = 13.dp)
                 ) { page ->
                     val startIndex = page * itemsPerPage
                     val endIndex = (startIndex + itemsPerPage).coerceAtMost(combinedItems.size)
@@ -183,7 +189,13 @@ fun HomeGrid(
                         userScrollEnabled = false,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(pageItems) { item ->
+                        items(pageItems, key = { item ->
+                            when (item) {
+                                is com.tunc.androidlauncher.data.database.FolderWithApps -> "folder_${item.folder.id}"
+                                is AppInfo -> "app_${item.packageName}"
+                                else -> item.hashCode()
+                            }
+                        }) { item ->
                             Box(contentAlignment = Alignment.Center) {
                                 when (item) {
                                     is com.tunc.androidlauncher.data.database.FolderWithApps -> {
@@ -242,9 +254,11 @@ fun HomeGrid(
                                                     draggedApp = item
                                                     draggedAppStartPosition = startPosition
                                                     hoveredApp = null
+                                                    onDragOverlayStart?.invoke(item, startPosition, iconSize + 28)
                                                 },
                                                 onDrag = { currentPos ->
                                                     currentDragPosition = currentPos
+                                                    onDragOverlayMove?.invoke(currentPos)
                                                     var foundHover: AppInfo? = null
                                                     appPositions.entries.forEach { (packageName, posSize) ->
                                                         if (packageName != item.packageName) {
@@ -264,7 +278,16 @@ fun HomeGrid(
                                                 },
                                                 onDragEnd = {
                                                     val hovered = hoveredApp
-                                                    if (hovered != null && hovered.packageName != item.packageName) {
+                                                    // Bottom bar alanına düşürüldü mü kontrol et (Esneklik payı ile)
+                                                    val droppedOnBottomBar = bottomBarBounds?.let { bounds ->
+                                                        currentDragPosition.y >= (bounds.top - 150f) &&
+                                                        currentDragPosition.y <= (bounds.bottom + 150f) &&
+                                                        currentDragPosition.x >= (bounds.left - 50f) &&
+                                                        currentDragPosition.x <= (bounds.right + 50f)
+                                                    } == true
+                                                    if (droppedOnBottomBar && onAppDroppedToBottomBar != null) {
+                                                        onAppDroppedToBottomBar(item)
+                                                    } else if (hovered != null && hovered.packageName != item.packageName) {
                                                         appsToFolder = Pair(item, hovered)
                                                         showCreateFolderDialog = true
                                                     }
@@ -272,12 +295,14 @@ fun HomeGrid(
                                                     hoveredApp = null
                                                     draggedAppStartPosition = Offset.Zero
                                                     currentDragPosition = Offset.Zero
+                                                    onDragOverlayEnd?.invoke()
                                                 },
                                                 onDragCancel = {
                                                     draggedApp = null
                                                     hoveredApp = null
                                                     draggedAppStartPosition = Offset.Zero
                                                     currentDragPosition = Offset.Zero
+                                                    onDragOverlayEnd?.invoke()
                                                 }
                                             )
                                         }
@@ -294,7 +319,7 @@ fun HomeGrid(
                         modifier = Modifier
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 4.dp),
+                            .padding(bottom = 0.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         androidx.compose.animation.AnimatedVisibility(
@@ -303,10 +328,8 @@ fun HomeGrid(
                             exit = fadeOut()
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .padding(vertical = 4.dp)
-                                    .height(8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 repeat(pageCount) { index ->
                                     Box(
@@ -338,7 +361,7 @@ fun HomeGrid(
             userScrollEnabled = false,
             modifier = modifier.fillMaxWidth()
         ) {
-            items(apps.take(4)) { app ->
+            items(apps.take(4), key = { it?.packageName ?: "null_${it.hashCode()}" }) { app ->
                 Box(contentAlignment = Alignment.Center) {
                     HomeIconItem(
                         app = app,
@@ -549,8 +572,15 @@ private fun HomeIconItemWithDrag(
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var isDragging by remember { mutableStateOf(false) }
     var itemPosition by remember { mutableStateOf(Offset.Zero) }
+    var exactIconPosition by remember { mutableStateOf(Offset.Zero) }
     var showContextMenu by remember { mutableStateOf(false) }
-    var hasDragged by remember { mutableStateOf(false) }
+
+    val currentOnDragStart by rememberUpdatedState(onDragStart)
+    val currentOnDrag by rememberUpdatedState(onDrag)
+    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
+    val currentOnDragCancel by rememberUpdatedState(onDragCancel)
+    val currentOnSelect by rememberUpdatedState(onSelect)
+    val currentOnDeselect by rememberUpdatedState(onDeselect)
 
     Column(
         modifier = Modifier
@@ -565,13 +595,9 @@ private fun HomeIconItemWithDrag(
                 )
             }
             .graphicsLayer {
-                scaleX =
-                    if (isDragging || isSelected) 1.15f else if (isHovered) 1.08f else 1f
-                scaleY =
-                    if (isDragging || isSelected) 1.15f else if (isHovered) 1.08f else 1f
-                alpha = if (isDragging) 0.8f else 1f
-                shadowElevation =
-                    if (isDragging) 16f else if (isSelected) 12f else if (isHovered) 6f else 0f
+                scaleX = if (isDragging || isSelected) 1.15f else if (isHovered) 1.08f else 1f
+                scaleY = if (isDragging || isSelected) 1.15f else if (isHovered) 1.08f else 1f
+                alpha = if (isDragging) 0f else 1f
                 translationY = if (isSelected && !isDragging) -8f else 0f
             },
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -583,7 +609,11 @@ private fun HomeIconItemWithDrag(
                 modifier = Modifier
                     .size((iconSize + 28).dp)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(Color.Transparent)
+                    .onGloballyPositioned { coordinates ->
+                        if (!isDragging) {
+                            exactIconPosition = coordinates.positionInRoot()
+                        }
+                    }
                     // Tap gesture
                     .pointerInput(editMode) {
                         detectTapGestures(
@@ -607,43 +637,46 @@ private fun HomeIconItemWithDrag(
                         )
                     }
                     // Long press + drag gesture
-                    .pointerInput(Unit) {
+                    .pointerInput(app.packageName) {
+                        var localHasDragged = false
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
-                                hasDragged = false
-                                isDragging = true
+                                localHasDragged = false
                                 dragOffset = Offset.Zero
                                 showContextMenu = false
-                                onSelect()
-                                onDragStart(itemPosition)
+                                currentOnSelect()
                             },
                             onDrag = { change, dragAmount ->
                                 change.consume()
                                 dragOffset += dragAmount
-                                if (dragOffset.getDistance() > 20f) {
-                                    hasDragged = true
+                                if (!localHasDragged && dragOffset.getDistance() > 5f) {
+                                    localHasDragged = true
+                                    isDragging = true
+                                    currentOnDragStart(exactIconPosition)
                                 }
-                                if (hasDragged) {
-                                    onDrag(itemPosition + dragOffset)
+                                if (localHasDragged) {
+                                    currentOnDrag(exactIconPosition + dragOffset)
                                 }
                             },
                             onDragEnd = {
-                                isDragging = false
-                                if (hasDragged) {
-                                    onDragEnd()
-                                    onDeselect()
+                                if (localHasDragged) {
+                                    isDragging = false
+                                    currentOnDragEnd()
+                                    currentOnDeselect()
                                 } else {
                                     showContextMenu = true
                                 }
                                 dragOffset = Offset.Zero
-                                hasDragged = false
+                                localHasDragged = false
                             },
                             onDragCancel = {
-                                isDragging = false
+                                if (localHasDragged) {
+                                    isDragging = false
+                                    currentOnDragCancel()
+                                }
                                 dragOffset = Offset.Zero
-                                hasDragged = false
-                                onDragCancel()
-                                onDeselect()
+                                localHasDragged = false
+                                currentOnDeselect()
                                 showContextMenu = false
                             }
                         )
