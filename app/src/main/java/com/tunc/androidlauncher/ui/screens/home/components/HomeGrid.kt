@@ -95,9 +95,12 @@ fun HomeGrid(
 ) {
     val folderManager = remember { FolderManager(context) }
     val appManager = remember { AppManager.getInstance(context) }
+    val placementManager = remember { AppPlacementManager.getInstance(context) }
     val coroutineScope = rememberCoroutineScope()
 
     val foldersWithApps by folderManager.getFoldersWithApps()
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val allPlacements by placementManager.allPlacementsFlow
         .collectAsStateWithLifecycle(initialValue = emptyList())
     var selectedFolder by remember { mutableStateOf<Long?>(null) }
     var showRenameDialog by remember { mutableStateOf(false) }
@@ -110,6 +113,7 @@ fun HomeGrid(
     var contextMenuPosition by remember { mutableStateOf(Offset.Zero) }
 
     var draggedApp by remember { mutableStateOf<AppInfo?>(null) }
+    var draggedFolderId by remember { mutableStateOf<Long?>(null) }
     var draggedAppStartPosition by remember { mutableStateOf(Offset.Zero) }
     var currentDragPosition by remember { mutableStateOf(Offset.Zero) }
     val appPositions = remember { mutableStateMapOf<String, Pair<Offset, IntSize>>() }
@@ -118,7 +122,8 @@ fun HomeGrid(
     var hoveredFolderId by remember { mutableStateOf<Long?>(null) }
     var isFolderDrop by remember { mutableStateOf(false) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
-    var appsToFolder by remember { mutableStateOf<Pair<AppInfo, AppInfo>?>(null) }
+    // Triple: (draggedApp, targetApp, targetSortIndex)
+    var appsToFolder by remember { mutableStateOf<Triple<AppInfo, AppInfo, Int>?>(null) }
 
     val appsInFolders = remember(foldersWithApps) {
         foldersWithApps.flatMap { it.apps.map { app -> app.packageName } }.toSet()
@@ -126,13 +131,30 @@ fun HomeGrid(
 
     val allApps by appManager.allApps.collectAsStateWithLifecycle()
 
-    val combinedItems = remember(apps, foldersWithApps, appsInFolders) {
-        val folders = foldersWithApps.sortedBy { it.folder.name.lowercase() }
+    // Klasörler ve uygulamaları sortIndex'e göre birlikte sırala
+    val combinedItems = remember(apps, foldersWithApps, appsInFolders, allPlacements) {
         val filteredApps = apps.filterNotNull().filter { !appsInFolders.contains(it.packageName) }
-        val items = mutableListOf<Any>()
-        items.addAll(folders)
-        items.addAll(filteredApps)
-        items
+        val placementMap = allPlacements.associateBy { it.packageName }
+
+        // Her öğeye bir sortIndex ata
+        data class SortedItem(val item: Any, val sortIndex: Int)
+
+        val sortedItems = mutableListOf<SortedItem>()
+
+        // Uygulamaları ekle (grid placement'tan sortIndex al)
+        filteredApps.forEach { app ->
+            val placement = placementMap[app.packageName]
+            val index = placement?.sortIndex ?: Int.MAX_VALUE
+            sortedItems.add(SortedItem(app, index))
+        }
+
+        // Klasörleri ekle (folder sortIndex'ten al)
+        foldersWithApps.forEach { folderWithApps ->
+            sortedItems.add(SortedItem(folderWithApps, folderWithApps.folder.sortIndex))
+        }
+
+        // Hepsini sortIndex'e göre sırala
+        sortedItems.sortedBy { it.sortIndex }.map { it.item }
     }
 
     // ROOT BOX FOR LAYERING
@@ -195,6 +217,10 @@ fun HomeGrid(
                                                 allApps.find { it.packageName == folderApp.packageName }
                                             }
                                             val isFolderHovered = hoveredFolderId == item.folder.id
+                                            val isFolderBeingDragged = draggedFolderId == item.folder.id
+                                            var folderDragOffset by remember { mutableStateOf(Offset.Zero) }
+                                            var isFolderDragging by remember { mutableStateOf(false) }
+                                            var folderIconPosition by remember { mutableStateOf(Offset.Zero) }
                                             Box(
                                                 modifier = Modifier
                                                     .onGloballyPositioned { coordinates ->
@@ -202,12 +228,96 @@ fun HomeGrid(
                                                             coordinates.positionInRoot(),
                                                             coordinates.size
                                                         )
+                                                        if (!isFolderDragging) {
+                                                            folderIconPosition = coordinates.positionInRoot()
+                                                        }
+                                                    }
+                                                    .offset {
+                                                        IntOffset(
+                                                            folderDragOffset.x.roundToInt(),
+                                                            folderDragOffset.y.roundToInt()
+                                                        )
                                                     }
                                                     .graphicsLayer {
                                                         if (isFolderHovered) {
                                                             scaleX = 1.15f
                                                             scaleY = 1.15f
                                                         }
+                                                        alpha = if (isFolderDragging) 0f else 1f
+                                                    }
+                                                    .pointerInput(item.folder.id) {
+                                                        var localHasDragged = false
+                                                        detectDragGesturesAfterLongPress(
+                                                            onDragStart = {
+                                                                localHasDragged = false
+                                                                folderDragOffset = Offset.Zero
+                                                            },
+                                                            onDrag = { change, dragAmount ->
+                                                                change.consume()
+                                                                folderDragOffset += dragAmount
+                                                                if (!localHasDragged && folderDragOffset.getDistance() > 5f) {
+                                                                    localHasDragged = true
+                                                                    isFolderDragging = true
+                                                                    draggedFolderId = item.folder.id
+                                                                    appForContextMenu = null
+                                                                    onDragOverlayStart?.invoke(
+                                                                        // Klasör için geçici bir AppInfo oluştur (overlay için)
+                                                                        folderApps.firstOrNull() ?: return@detectDragGesturesAfterLongPress,
+                                                                        folderIconPosition,
+                                                                        iconSize + 28
+                                                                    )
+                                                                }
+                                                                if (localHasDragged) {
+                                                                    currentDragPosition = folderIconPosition + folderDragOffset
+                                                                    onDragOverlayMove?.invoke(folderIconPosition + folderDragOffset)
+
+                                                                    // Uygulama pozisyonlarını kontrol et (klasör taşıma için)
+                                                                    var foundHover: AppInfo? = null
+                                                                    var minDistance = Float.MAX_VALUE
+                                                                    appPositions.entries.forEach { (packageName, posSize) ->
+                                                                        val (appPos, appSize) = posSize
+                                                                        val appCenter = appPos + Offset(appSize.width / 2f, appSize.height / 2f)
+                                                                        val dragCenter = currentDragPosition + Offset(appSize.width / 2f, appSize.height / 2f)
+                                                                        val distance = (dragCenter - appCenter).getDistance()
+                                                                        if (distance < appSize.width && distance < minDistance) {
+                                                                            minDistance = distance
+                                                                            foundHover = allApps.find { it.packageName == packageName }
+                                                                        }
+                                                                    }
+                                                                    hoveredApp = foundHover
+                                                                }
+                                                            },
+                                                            onDragEnd = {
+                                                                if (localHasDragged) {
+                                                                    val hovered = hoveredApp
+                                                                    if (hovered != null) {
+                                                                        // Klasörü hedef uygulamanın pozisyonuna taşı
+                                                                        coroutineScope.launch {
+                                                                            val targetPlacement = placementManager.getPlacementForApp(hovered.packageName)
+                                                                            if (targetPlacement != null) {
+                                                                                viewModel.moveFolderToPosition(context, item.folder.id, targetPlacement.sortIndex)
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    isFolderDragging = false
+                                                                    draggedFolderId = null
+                                                                    hoveredApp = null
+                                                                    onDragOverlayEnd?.invoke()
+                                                                }
+                                                                folderDragOffset = Offset.Zero
+                                                                localHasDragged = false
+                                                            },
+                                                            onDragCancel = {
+                                                                if (localHasDragged) {
+                                                                    isFolderDragging = false
+                                                                    draggedFolderId = null
+                                                                    hoveredApp = null
+                                                                    onDragOverlayEnd?.invoke()
+                                                                }
+                                                                folderDragOffset = Offset.Zero
+                                                                localHasDragged = false
+                                                            }
+                                                        )
                                                     }
                                             ) {
                                                 FolderItem(
@@ -343,8 +453,13 @@ fun HomeGrid(
                                                             }
                                                         } else if (hovered != null && hovered.packageName != item.packageName) {
                                                             if (isFolderDrop) {
-                                                                appsToFolder = Pair(item, hovered)
-                                                                showCreateFolderDialog = true
+                                                                // Hedef uygulamanın sortIndex'ini al
+                                                                coroutineScope.launch {
+                                                                    val targetPlacement = placementManager.getPlacementForApp(hovered.packageName)
+                                                                    val targetSortIndex = targetPlacement?.sortIndex ?: 0
+                                                                    appsToFolder = Triple(item, hovered, targetSortIndex)
+                                                                    showCreateFolderDialog = true
+                                                                }
                                                             } else {
                                                                 viewModel.moveApp(context, item.packageName, hovered.packageName)
                                                             }
@@ -547,9 +662,14 @@ fun HomeGrid(
                 },
                 onConfirm = { folderName ->
                     coroutineScope.launch {
-                        val folderId = folderManager.createFolder(folderName)
+                        val targetSortIndex = appsToFolder!!.third
+                        val folderId = folderManager.createFolder(folderName, targetSortIndex)
                         folderManager.addAppToFolder(folderId, appsToFolder!!.first.packageName)
                         folderManager.addAppToFolder(folderId, appsToFolder!!.second.packageName)
+                        // Klasöre eklenen uygulamaları grid placement'tan kaldır
+                        placementManager.removeAppsFromGrid(
+                            listOf(appsToFolder!!.first.packageName, appsToFolder!!.second.packageName)
+                        )
                         showCreateFolderDialog = false
                         appsToFolder = null
                     }

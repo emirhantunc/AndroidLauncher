@@ -24,8 +24,8 @@ class FolderManager(private val context: Context) {
         return dao.getAppsInFolder(folderId)
     }
 
-    suspend fun createFolder(name: String): Long {
-        return dao.insertFolder(AppFolder(name = name))
+    suspend fun createFolder(name: String, sortIndex: Int = 0): Long {
+        return dao.insertFolder(AppFolder(name = name, sortIndex = sortIndex))
     }
 
     suspend fun updateFolderName(folderId: Long, newName: String) {
@@ -33,6 +33,14 @@ class FolderManager(private val context: Context) {
         folder?.let {
             dao.updateFolder(it.copy(name = newName))
         }
+    }
+
+    suspend fun updateFolderSortIndex(folderId: Long, sortIndex: Int) {
+        dao.updateFolderSortIndex(folderId, sortIndex)
+    }
+
+    suspend fun getAllFoldersSync(): List<AppFolder> {
+        return dao.getAllFoldersSync()
     }
 
     suspend fun getFolderByIdSync(folderId: Long): AppFolder? {

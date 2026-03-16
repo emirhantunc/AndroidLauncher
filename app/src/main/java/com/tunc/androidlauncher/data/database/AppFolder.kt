@@ -8,5 +8,6 @@ data class AppFolder(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,
+    val sortIndex: Int = 0,
     val createdAt: Long = System.currentTimeMillis()
 )

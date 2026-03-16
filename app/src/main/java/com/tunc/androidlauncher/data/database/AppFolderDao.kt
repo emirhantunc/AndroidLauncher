@@ -5,8 +5,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppFolderDao {
-    @Query("SELECT * FROM app_folders ORDER BY createdAt ASC")
+    @Query("SELECT * FROM app_folders ORDER BY sortIndex ASC")
     fun getAllFolders(): Flow<List<AppFolder>>
+
+    @Query("SELECT * FROM app_folders ORDER BY sortIndex ASC")
+    suspend fun getAllFoldersSync(): List<AppFolder>
+
+    @Query("UPDATE app_folders SET sortIndex = :sortIndex WHERE id = :folderId")
+    suspend fun updateFolderSortIndex(folderId: Long, sortIndex: Int)
 
     @Query("SELECT * FROM app_folders WHERE id = :folderId")
     suspend fun getFolderById(folderId: Long): AppFolder?

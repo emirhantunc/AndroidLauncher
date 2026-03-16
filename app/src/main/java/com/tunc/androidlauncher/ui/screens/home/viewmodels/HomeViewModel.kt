@@ -115,4 +115,11 @@ class HomeViewModel : ViewModel() {
             }
         }
     }
+
+    fun moveFolderToPosition(context: Context, folderId: Long, targetSortIndex: Int) {
+        viewModelScope.launch {
+            val folderManager = com.tunc.androidlauncher.data.FolderManager(context)
+            folderManager.updateFolderSortIndex(folderId, targetSortIndex)
+        }
+    }
 }

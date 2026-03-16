@@ -296,6 +296,21 @@ class AppPlacementManager private constructor(context: Context) {
         dao.replaceAll(reindexed)
     }
 
+    /**
+     * Bir uygulamanın mevcut placement bilgisini al.
+     */
+    suspend fun getPlacementForApp(packageName: String): AppPlacement? {
+        return dao.getPlacement(packageName)
+    }
+
+    /**
+     * Belirtilen uygulamaları grid'den kaldır ve indexleri yeniden düzenle.
+     */
+    suspend fun removeAppsFromGrid(packageNames: List<String>) {
+        packageNames.forEach { dao.deletePlacement(it) }
+        reindexAll()
+        Log.d(TAG, "Removed ${packageNames.size} apps from grid for folder creation")
+    }
 
 }
 
