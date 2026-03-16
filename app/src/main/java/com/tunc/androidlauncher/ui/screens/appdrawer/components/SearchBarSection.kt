@@ -29,14 +29,14 @@ import com.tunc.androidlauncher.R
 
 @Composable
 fun RowScope.SearchBarSection(
+    query: String,
+    onQueryChange: (String) -> Unit,
     primary: Color = MaterialTheme.colorScheme.primary,
     surface: Color = MaterialTheme.colorScheme.surface,
     onSurfaceVariant: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onSurface: Color = MaterialTheme.colorScheme.onSurface,
     bodyMedium: TextStyle = MaterialTheme.typography.bodyMedium
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-
     Box(
         modifier = Modifier
             .weight(1f)
@@ -45,8 +45,8 @@ fun RowScope.SearchBarSection(
             .background(surface.copy(alpha = 0.5f)), contentAlignment = Alignment.CenterStart
     ) {
         TextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
+            value = query,
+            onValueChange = onQueryChange,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),

@@ -13,6 +13,7 @@ import com.tunc.androidlauncher.ui.screens.home.HomeApps
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 
@@ -21,6 +22,9 @@ class HomeViewModel : ViewModel() {
     private val _gridApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val gridApps = _gridApps.asStateFlow()
 
+    private val _mostUsedApps = MutableStateFlow<List<AppInfo>>(emptyList())
+    val mostUsedApps = _mostUsedApps.asStateFlow()
+
     /** Bottom bar uygulamaları (placement index sırasına göre, index 0-3) */
     private val _bottomBarApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val bottomBarApps = _bottomBarApps.asStateFlow()
@@ -28,6 +32,7 @@ class HomeViewModel : ViewModel() {
     private var isObserving = false
 
     fun loadApps(context: Context) {
+        val appManager = AppManager.getInstance(context)
         viewModelScope.launch {
             val layoutManager = LayoutManager(context)
             val launcherMode = layoutManager.getLauncherMode()
@@ -71,7 +76,6 @@ class HomeViewModel : ViewModel() {
                                     visibleApps2.find { it.packageName == placement.packageName }
                                 }
 
-                            // Placement'ı olmayan yeni uygulamaları da grid sonuna ekle
                             val placedPackages = placementMap.keys
                             val unplaced = visibleApps2.filter { it.packageName !in placedPackages }
 
@@ -80,17 +84,34 @@ class HomeViewModel : ViewModel() {
                             _bottomBarApps.value = bottomBar
                             _gridApps.value = grid
 
-                            // Yeni uygulamaları sync et
                             val placementManager2 = AppPlacementManager.getInstance(context)
                             placementManager2.initializeIfNeeded(allVisible)
                         }
                     }
                 }
             } else {
-                // APP_DRAWER modunda sadece belirli uygulamaları göster
-                HomeApps.loadAppsIfNeeded(context)
-                _gridApps.value = HomeApps.cachedGridApps
                 _bottomBarApps.value = HomeApps.cachedDockApps
+            }
+        }
+    }
+
+    fun swapApps(context: Context, fromPackage: String, toPackage: String) {
+        viewModelScope.launch {
+            val placementManager = AppPlacementManager.getInstance(context)
+            placementManager.swapApps(fromPackage, toPackage)
+        }
+    }
+
+    fun requestUsageStatsPermission(context: Context) {
+        viewModelScope.launch {
+            val appManager = AppManager.getInstance(context)
+            if (appManager.hasUsageStatsPermission(context)) {
+                HomeApps.getMostUsedApps(context,true)
+                val apps = HomeApps.cachedGridApps
+                _mostUsedApps.update {apps}
+            } else {
+                appManager.requestUsageStatsPermission(context)
+
             }
         }
     }

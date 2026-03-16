@@ -72,17 +72,15 @@ fun HomeScreen(
     }
 
     val gridApps by viewModel.gridApps.collectAsStateWithLifecycle()
+    val mostUsedApps by viewModel.mostUsedApps.collectAsStateWithLifecycle()
     val bottomBarApps by viewModel.bottomBarApps.collectAsStateWithLifecycle()
 
-    // Cross-drag bounds tracking
     var bottomBarBounds by remember { mutableStateOf<Rect?>(null) }
     var gridBounds by remember { mutableStateOf<Rect?>(null) }
 
-    // Drag overlay state - sürüklenen ikon en üst katmanda gösterilecek
     var dragOverlayApp by remember { mutableStateOf<AppInfo?>(null) }
     var dragOverlayPosition by remember { mutableStateOf(Offset.Zero) }
     var dragOverlayIconSize by remember { mutableIntStateOf(0) }
-    // Root Box'ın pozisyonunu takip et
     var rootPosition by remember { mutableStateOf(Offset.Zero) }
 
     Box(
@@ -115,10 +113,8 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (launcherMode == LauncherMode.APP_DRAWER) {
-                HomeSearchBar()
-                Spacer(modifier = Modifier.height(26.dp))
+                Spacer(modifier = Modifier.height(30.dp))
             } else {
-                // HOME_GRID modunda sadece settings butonu
                 if (onNavigateToSettings != null) {
                     Box(
                         modifier = Modifier
@@ -141,7 +137,7 @@ fun HomeScreen(
 
             if (launcherMode == LauncherMode.APP_DRAWER) {
                 LockScreenClock()
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(50.dp))
             }
 
             if (gridApps.isNotEmpty()) {
@@ -160,6 +156,7 @@ fun HomeScreen(
                 ) {
                     HomeGrid(
                         apps = gridApps,
+                        mostUsedApps = mostUsedApps,
                         context = context,
                         modifier = Modifier,
                         appLockManager = appLockManager,
@@ -181,7 +178,8 @@ fun HomeScreen(
                         },
                         onDragOverlayEnd = {
                             dragOverlayApp = null
-                        }
+                        },
+                        viewModel = viewModel
                     )
                 }
             }
@@ -225,7 +223,6 @@ fun HomeScreen(
                     }
                 )
             } else {
-                // Bottom bar boş olsa bile bounds'u track etmek için boş bir Row koy
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -244,7 +241,6 @@ fun HomeScreen(
             }
         }
 
-        // Drag Overlay - sürüklenen ikon en üst katmanda render edilir
         dragOverlayApp?.let { app ->
             val density = LocalDensity.current
             Box(
@@ -287,11 +283,5 @@ fun HomeScreen(
             }
         }
     }
+    viewModel.requestUsageStatsPermission(context)
 }
-
-
-
-
-
-
-

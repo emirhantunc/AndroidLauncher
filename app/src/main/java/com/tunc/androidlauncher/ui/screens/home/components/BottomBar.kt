@@ -120,7 +120,6 @@ fun BottomBar(
                             val exactDraggedPos = startExactPos + dragOffset
                             onDragOverlayMove?.invoke(exactDraggedPos)
 
-                            // Hangi item üzerinde olduğumuzu kontrol et
                             val draggedPosition = itemPositions[index]?.plus(dragOffset)
                             draggedPosition?.let { pos ->
                                 itemPositions.entries.forEachIndexed { idx, entry ->
@@ -135,16 +134,13 @@ fun BottomBar(
                             }
                         },
                         onDragEnd = {
-                            // Grid alanına düşürüldü mü kontrol et
                             val draggedPosition = itemPositions[index]?.plus(dragOffset)
                             val droppedOnGrid = draggedPosition != null && gridBounds?.contains(draggedPosition) == true
                             val draggedApp = apps.getOrNull(index)
 
                             if (droppedOnGrid && draggedApp != null && onAppRemovedFromBar != null) {
-                                // Bottom bar'dan kaldır
                                 onAppRemovedFromBar(draggedApp)
                             } else {
-                                // Yeniden sıralama
                                 hoveredIndex?.let { targetIndex ->
                                     if (targetIndex != index) {
                                         val mutableApps = apps.filterNotNull().toMutableList()

@@ -1,5 +1,8 @@
 package com.tunc.androidlauncher.data
 
+import android.app.AppOpsManager
+import android.app.usage.UsageStats
+import android.app.usage.UsageStatsManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.provider.Settings
 
 class AppManager private constructor(private val context: Context) {
 
@@ -197,5 +201,47 @@ class AppManager private constructor(private val context: Context) {
                         app.name.contains(keyword, ignoreCase = true)
             }
         }
+    }
+
+    fun getMostUsedApps(context: Context): List<UsageStats> {
+        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+
+        val endTime = System.currentTimeMillis()
+        val startTime = endTime - (1000 * 60 * 60 * 24 * 7)
+
+        val stats = usageStatsManager.queryUsageStats(
+            UsageStatsManager.INTERVAL_BEST,
+            startTime,
+            endTime
+        )
+        return stats
+            .filter { it.totalTimeInForeground > 0 }
+            .sortedByDescending { it.totalTimeInForeground }
+            .take(4)
+    }
+    fun hasUsageStatsPermission(context: Context): Boolean {
+        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = appOps.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            context.packageName
+        )
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    fun isUsageStatsPermissionGranted(context: Context): Boolean {
+        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = appOps.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            context.packageName
+        )
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    fun requestUsageStatsPermission(context: Context) {
+        val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+        }
+        context.startActivity(intent)
     }
 }

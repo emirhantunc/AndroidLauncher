@@ -29,10 +29,6 @@ import java.util.Locale
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LockScreenClock(
-    onSurface: Color = MaterialTheme.colorScheme.onSurface,
-    titleSmall : TextStyle = MaterialTheme.typography.titleSmall,
-    displayLarge : TextStyle = MaterialTheme.typography.displayLarge,
-    onSurfaceVariant: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     val currentTime by getSystemTimeFlow().collectAsState(initial = LocalDateTime.now())
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -47,16 +43,16 @@ fun LockScreenClock(
     ) {
         Text(
             text = currentTime.format(timeFormatter),
-            color = onSurface,
-            style = displayLarge,
+            color =  MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.displayLarge,
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = currentTime.format(dateFormatter).uppercase(),
-            color = onSurfaceVariant,
-            style = titleSmall
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.titleSmall
         )
     }
 }

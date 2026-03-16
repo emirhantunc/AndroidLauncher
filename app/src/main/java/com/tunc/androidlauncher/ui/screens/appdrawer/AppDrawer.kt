@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
@@ -80,9 +81,12 @@ fun AppDrawer(
     var draggedApp by remember { mutableStateOf<AppInfo?>(null) }
     var dragPosition = Offset.Zero
     val appPositions = remember { mutableStateMapOf<String, Pair<Offset, IntSize>>() }
+    val folderPositions = remember { mutableStateMapOf<Long, Pair<Offset, IntSize>>() }
     var hoveredApp by remember { mutableStateOf<AppInfo?>(null) }
+    var hoveredFolderId by remember { mutableStateOf<Long?>(null) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
     var appsToFolder by remember { mutableStateOf<Pair<AppInfo, AppInfo>?>(null) }
+    var searchQuery by remember { mutableStateOf("") } // Arama sorgusu
 
     val recentApps = remember(recentPackages, allApps, hiddenPackages) {
         recentPackages.mapNotNull { packageName ->
@@ -98,18 +102,39 @@ fun AppDrawer(
         appManager.loadApps()
     }
 
-    LaunchedEffect(allApps, hiddenPackages, foldersWithApps) {
+    LaunchedEffect(allApps, hiddenPackages, foldersWithApps, searchQuery) { // searchQuery eklendi
         if (allApps.isNotEmpty()) {
             val appsInFolders =
                 foldersWithApps.flatMap { it.apps.map { app -> app.packageName } }.toSet()
+
+            // Tüm gizli olmayan ve klasörde olmayan uygulamaları al
             val visibleApps = allApps.filter {
                 !hiddenPackages.contains(it.packageName) && !appsInFolders.contains(it.packageName)
             }
-            val grouped = visibleApps.sortedBy { it.name.lowercase() }
+
+            // Arama filtresi
+            val filteredApps = if (searchQuery.isBlank()) {
+                visibleApps
+            } else {
+                visibleApps.filter {
+                    it.name.startsWith(searchQuery, ignoreCase = true)
+                }
+            }
+
+            val grouped = filteredApps.sortedBy { it.name.lowercase() }
                 .groupBy { it.name.firstOrNull()?.uppercase() ?: "#" }
             appList = grouped
 
-            val foldersGrouped = foldersWithApps
+            // Klasörleri de filtrele
+            val filteredFolders = if (searchQuery.isBlank()) {
+                foldersWithApps
+            } else {
+                foldersWithApps.filter {
+                    it.folder.name.startsWith(searchQuery, ignoreCase = true)
+                }
+            }
+
+            val foldersGrouped = filteredFolders
                 .sortedBy { it.folder.name.lowercase() }
                 .groupBy { it.folder.name.firstOrNull()?.uppercase() ?: "#" }
             foldersByLetter = foldersGrouped
@@ -155,7 +180,10 @@ fun AppDrawer(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                SearchBarSection()
+                SearchBarSection(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it }
+                )
 
                 SettingsIcon(onClick = onSettingsClick)
             }
@@ -191,12 +219,29 @@ fun AppDrawer(
                             allApps.find { it.packageName == folderApp.packageName }
                         }
                         item {
-                            FolderItem(
-                                folderName = folderWithApps.folder.name,
-                                apps = folderApps,
-                                onClick = { selectedFolder = folderWithApps.folder.id },
-                                iconSize = iconSize.appDrawerSize
-                            )
+                            val isHovered = hoveredFolderId == folderWithApps.folder.id
+                            Box(
+                                modifier = Modifier
+                                    .onGloballyPositioned { coordinates ->
+                                        folderPositions[folderWithApps.folder.id] = Pair(
+                                            coordinates.positionInRoot(),
+                                            coordinates.size
+                                        )
+                                    }
+                                    .graphicsLayer {
+                                        if (isHovered) {
+                                            scaleX = 1.1f
+                                            scaleY = 1.1f
+                                        }
+                                    }
+                            ) {
+                                FolderItem(
+                                    folderName = folderWithApps.folder.name,
+                                    apps = folderApps,
+                                    onClick = { selectedFolder = folderWithApps.folder.id },
+                                    iconSize = iconSize.appDrawerSize
+                                )
+                            }
                         }
                     }
 
@@ -239,39 +284,58 @@ fun AppDrawer(
                                 onDrag = { currentPos ->
                                     dragPosition = currentPos
 
-                                    // Hangi app üzerinde olduğumuzu kontrol et
-                                    var foundHover: AppInfo? = null
+                                    var foundHoverApp: AppInfo? = null
+                                    var foundHoverFolder: Long? = null
+
+                                    // App positions check
                                     appPositions.entries.forEach { (packageName, positionSize) ->
                                         if (packageName != app.packageName) {
                                             val (appPos, appSize) = positionSize
-
-                                            // Icon merkezini hesapla
-                                            val iconCenterX = appPos.x + appSize.width / 2
-                                            val iconCenterY = appPos.y + appSize.height / 2
-
-                                            // Drag edilen uygulama merkezi bu icon'un alanında mı?
                                             val isOverApp = currentPos.x >= appPos.x &&
                                                     currentPos.x <= appPos.x + appSize.width &&
                                                     currentPos.y >= appPos.y &&
                                                     currentPos.y <= appPos.y + appSize.height
 
                                             if (isOverApp) {
-                                                foundHover =
-                                                    allApps.find { it.packageName == packageName }
+                                                foundHoverApp = allApps.find { it.packageName == packageName }
                                             }
                                         }
                                     }
-                                    hoveredApp = foundHover
+
+                                    // Folder positions check
+                                    folderPositions.entries.forEach { (folderId, positionSize) ->
+                                        val (folderPos, folderSize) = positionSize
+                                        val isOverFolder = currentPos.x >= folderPos.x &&
+                                                currentPos.x <= folderPos.x + folderSize.width &&
+                                                currentPos.y >= folderPos.y &&
+                                                currentPos.y <= folderPos.y + folderSize.height
+
+                                        if (isOverFolder) {
+                                            foundHoverFolder = folderId
+                                        }
+                                    }
+
+                                    hoveredApp = foundHoverApp
+                                    hoveredFolderId = foundHoverFolder
                                 },
                                 onDragEnd = {
-                                    // Eğer bir app üzerinde bırakıldıysa, klasör oluştur
-                                    if (hoveredApp != null && draggedApp != null) {
-                                        appsToFolder = Pair(draggedApp!!, hoveredApp!!)
+                                    val targetFolderId = hoveredFolderId
+                                    val currentDraggedApp = draggedApp
+
+                                    if (targetFolderId != null && currentDraggedApp != null) {
+                                        // Add to existing folder
+                                        coroutineScope.launch {
+                                            folderManager.addAppToFolder(targetFolderId, currentDraggedApp.packageName)
+                                        }
+                                    } else if (hoveredApp != null && currentDraggedApp != null) {
+                                        // Create new folder
+                                        appsToFolder = Pair(currentDraggedApp, hoveredApp!!)
                                         showCreateFolderDialog = true
                                     }
 
                                     draggedApp = null
                                     hoveredApp = null
+                                    hoveredFolderId = null
                                     dragPosition = Offset.Zero
                                 }
                             )

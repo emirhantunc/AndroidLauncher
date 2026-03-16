@@ -64,7 +64,6 @@ fun LauncherMainScreen(
             )
         }
 
-        // AppDrawer sadece APP_DRAWER modunda gösterilir
         if (launcherMode == LauncherMode.APP_DRAWER) {
             Box(
                 modifier = Modifier

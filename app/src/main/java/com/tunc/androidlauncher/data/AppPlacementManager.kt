@@ -1,6 +1,9 @@
 package com.tunc.androidlauncher.data
 
 import android.annotation.SuppressLint
+import android.app.AppOpsManager
+import android.app.usage.UsageStats
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.util.Log
 import com.tunc.androidlauncher.core.models.AppInfo
@@ -24,8 +27,8 @@ class AppPlacementManager private constructor(context: Context) {
 
     companion object {
         private const val TAG = "AppPlacementManager"
-        const val BOTTOM_BAR_MAX_INDEX = 3   // 0..3 = 4 slot
-        const val GRID_START_INDEX = 4       // Grid ilk index
+        const val BOTTOM_BAR_MAX_INDEX = 3
+        const val GRID_START_INDEX = 4
 
         @Volatile
         private var INSTANCE: AppPlacementManager? = null
@@ -210,9 +213,7 @@ class AppPlacementManager private constructor(context: Context) {
         }
     }
 
-    /**
-     * İki uygulamanın yerini değiştir (hem bottom bar içi hem grid içi hem çapraz)
-     */
+
     suspend fun swapApps(packageName1: String, packageName2: String) {
         val placement1 = dao.getPlacement(packageName1)
         val placement2 = dao.getPlacement(packageName2)
@@ -224,19 +225,14 @@ class AppPlacementManager private constructor(context: Context) {
         }
     }
 
-    /**
-     * Uygulama kaldırıldığında placement'ı sil ve reindex yap.
-     */
+
     suspend fun onAppUninstalled(packageName: String) {
         dao.deletePlacement(packageName)
         reindexAll()
         Log.d(TAG, "Removed uninstalled app: $packageName")
     }
 
-    /**
-     * Tüm index'leri yeniden düzenle (gap'leri kapat).
-     * Bottom bar: 0-3 (sırasıyla), Grid: 4+ (sırasıyla)
-     */
+
     private suspend fun reindexAll() {
         val all = dao.getAllPlacementsSync().sortedBy { it.sortIndex }
         val bottomBar = all.filter { it.sortIndex in 0..BOTTOM_BAR_MAX_INDEX }
@@ -254,4 +250,9 @@ class AppPlacementManager private constructor(context: Context) {
 
         dao.replaceAll(reindexed)
     }
+
+
 }
+
+
+
