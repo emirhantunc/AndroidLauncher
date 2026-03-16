@@ -95,10 +95,10 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    fun swapApps(context: Context, fromPackage: String, toPackage: String) {
+    fun moveApp(context: Context, fromPackage: String, toPackage: String) {
         viewModelScope.launch {
             val placementManager = AppPlacementManager.getInstance(context)
-            placementManager.swapApps(fromPackage, toPackage)
+            placementManager.moveApp(fromPackage, toPackage)
         }
     }
 

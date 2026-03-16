@@ -113,7 +113,9 @@ fun HomeGrid(
     var draggedAppStartPosition by remember { mutableStateOf(Offset.Zero) }
     var currentDragPosition by remember { mutableStateOf(Offset.Zero) }
     val appPositions = remember { mutableStateMapOf<String, Pair<Offset, IntSize>>() }
+    val folderPositions = remember { mutableStateMapOf<Long, Pair<Offset, IntSize>>() }
     var hoveredApp by remember { mutableStateOf<AppInfo?>(null) }
+    var hoveredFolderId by remember { mutableStateOf<Long?>(null) }
     var isFolderDrop by remember { mutableStateOf(false) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
     var appsToFolder by remember { mutableStateOf<Pair<AppInfo, AppInfo>?>(null) }
@@ -192,12 +194,29 @@ fun HomeGrid(
                                             val folderApps = item.apps.mapNotNull { folderApp ->
                                                 allApps.find { it.packageName == folderApp.packageName }
                                             }
-                                            FolderItem(
-                                                folderName = item.folder.name,
-                                                apps = folderApps,
-                                                onClick = { selectedFolder = item.folder.id },
-                                                iconSize = iconSize
-                                            )
+                                            val isFolderHovered = hoveredFolderId == item.folder.id
+                                            Box(
+                                                modifier = Modifier
+                                                    .onGloballyPositioned { coordinates ->
+                                                        folderPositions[item.folder.id] = Pair(
+                                                            coordinates.positionInRoot(),
+                                                            coordinates.size
+                                                        )
+                                                    }
+                                                    .graphicsLayer {
+                                                        if (isFolderHovered) {
+                                                            scaleX = 1.15f
+                                                            scaleY = 1.15f
+                                                        }
+                                                    }
+                                            ) {
+                                                FolderItem(
+                                                    folderName = item.folder.name,
+                                                    apps = folderApps,
+                                                    onClick = { selectedFolder = item.folder.id },
+                                                    iconSize = iconSize
+                                                )
+                                            }
                                         }
 
                                         is AppInfo -> {
@@ -248,41 +267,67 @@ fun HomeGrid(
 
                                                         var foundHover: AppInfo? = null
                                                         var nearbyFolder = false
+                                                        var foundFolderId: Long? = null
 
-                                                        var minDistance = Float.MAX_VALUE
-                                                        var closestPkg: String? = null
-                                                        var closestSize: IntSize? = null
+                                                        // Önce klasör pozisyonlarını kontrol et
+                                                        var minFolderDistance = Float.MAX_VALUE
+                                                        folderPositions.entries.forEach { (folderId, posSize) ->
+                                                            val (folderPos, folderSize) = posSize
+                                                            val folderCenter = folderPos + Offset(folderSize.width / 2f, folderSize.height / 2f)
+                                                            val dragCenter = currentPos + Offset(folderSize.width / 2f, folderSize.height / 2f)
+                                                            val distance = (dragCenter - folderCenter).getDistance()
 
-                                                        appPositions.entries.forEach { (packageName, posSize) ->
-                                                            if (packageName != item.packageName) {
-                                                                val (appPos, appSize) = posSize
-
-                                                                val appCenter = appPos + Offset(appSize.width / 2f, appSize.height / 2f)
-                                                                val dragCenter = currentPos + Offset(appSize.width / 2f, appSize.height / 2f)
-
-                                                                val distance = (dragCenter - appCenter).getDistance()
-
-                                                                if (distance < appSize.width) {
-                                                                    if (distance < minDistance) {
-                                                                        minDistance = distance
-                                                                        closestPkg = packageName
-                                                                        closestSize = appSize
-                                                                    }
-                                                                }
+                                                            if (distance < folderSize.width && distance < minFolderDistance) {
+                                                                minFolderDistance = distance
+                                                                foundFolderId = folderId
                                                             }
                                                         }
 
-                                                        if (closestPkg != null && closestSize != null) {
-                                                            foundHover = allApps.find { it.packageName == closestPkg }
-                                                            val threshold = closestSize!!.width * 0.2f
-                                                            nearbyFolder = minDistance < threshold
-                                                        }
+                                                        // Klasör bulunduysa klasör hover'ını ayarla
+                                                        if (foundFolderId != null) {
+                                                            hoveredFolderId = foundFolderId
+                                                            hoveredApp = null
+                                                            isFolderDrop = false
+                                                        } else {
+                                                            hoveredFolderId = null
 
-                                                        hoveredApp = foundHover
-                                                        isFolderDrop = nearbyFolder
+                                                            // Uygulama pozisyonlarını kontrol et
+                                                            var minDistance = Float.MAX_VALUE
+                                                            var closestPkg: String? = null
+                                                            var closestSize: IntSize? = null
+
+                                                            appPositions.entries.forEach { (packageName, posSize) ->
+                                                                if (packageName != item.packageName) {
+                                                                    val (appPos, appSize) = posSize
+
+                                                                    val appCenter = appPos + Offset(appSize.width / 2f, appSize.height / 2f)
+                                                                    val dragCenter = currentPos + Offset(appSize.width / 2f, appSize.height / 2f)
+
+                                                                    val distance = (dragCenter - appCenter).getDistance()
+
+                                                                    if (distance < appSize.width) {
+                                                                        if (distance < minDistance) {
+                                                                            minDistance = distance
+                                                                            closestPkg = packageName
+                                                                            closestSize = appSize
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            if (closestPkg != null && closestSize != null) {
+                                                                foundHover = allApps.find { it.packageName == closestPkg }
+                                                                val threshold = closestSize!!.width * 0.2f
+                                                                nearbyFolder = minDistance < threshold
+                                                            }
+
+                                                            hoveredApp = foundHover
+                                                            isFolderDrop = nearbyFolder
+                                                        }
                                                     },
                                                     onDragEnd = {
                                                         val hovered = hoveredApp
+                                                        val targetFolderId = hoveredFolderId
                                                         val droppedOnBottomBar = bottomBarBounds?.let { bounds ->
                                                             currentDragPosition.y >= (bounds.top - 150f) &&
                                                                     currentDragPosition.y <= (bounds.bottom + 150f) &&
@@ -291,16 +336,22 @@ fun HomeGrid(
                                                         } == true
                                                         if (droppedOnBottomBar && onAppDroppedToBottomBar != null) {
                                                             onAppDroppedToBottomBar(item)
+                                                        } else if (targetFolderId != null) {
+                                                            // Mevcut klasöre ekle
+                                                            coroutineScope.launch {
+                                                                folderManager.addAppToFolder(targetFolderId, item.packageName)
+                                                            }
                                                         } else if (hovered != null && hovered.packageName != item.packageName) {
                                                             if (isFolderDrop) {
                                                                 appsToFolder = Pair(item, hovered)
                                                                 showCreateFolderDialog = true
                                                             } else {
-                                                                viewModel.swapApps(context, item.packageName, hovered.packageName)
+                                                                viewModel.moveApp(context, item.packageName, hovered.packageName)
                                                             }
                                                         }
                                                         draggedApp = null
                                                         hoveredApp = null
+                                                        hoveredFolderId = null
                                                         isFolderDrop = false
                                                         draggedAppStartPosition = Offset.Zero
                                                         currentDragPosition = Offset.Zero
@@ -309,6 +360,7 @@ fun HomeGrid(
                                                     onDragCancel = {
                                                         draggedApp = null
                                                         hoveredApp = null
+                                                        hoveredFolderId = null
                                                         isFolderDrop = false
                                                         draggedAppStartPosition = Offset.Zero
                                                         currentDragPosition = Offset.Zero

@@ -214,15 +214,60 @@ class AppPlacementManager private constructor(context: Context) {
     }
 
 
-    suspend fun swapApps(packageName1: String, packageName2: String) {
-        val placement1 = dao.getPlacement(packageName1)
-        val placement2 = dao.getPlacement(packageName2)
+    /**
+     * Bir uygulamayı sürükleyip başka bir uygulamanın yanına bıraktığında,
+     * insert-based reorder yapar. Aradaki uygulamalar kaydırılır.
+     *
+     * fromPackage: sürüklenen uygulama
+     * toPackage: bırakıldığı hedef uygulama
+     */
+    suspend fun moveApp(fromPackage: String, toPackage: String) {
+        val allPlacements = dao.getAllPlacementsSync().sortedBy { it.sortIndex }
+        val fromPlacement = allPlacements.find { it.packageName == fromPackage } ?: return
+        val toPlacement = allPlacements.find { it.packageName == toPackage } ?: return
 
-        if (placement1 != null && placement2 != null) {
-            dao.insertPlacement(AppPlacement(packageName = packageName1, sortIndex = placement2.sortIndex))
-            dao.insertPlacement(AppPlacement(packageName = packageName2, sortIndex = placement1.sortIndex))
-            Log.d(TAG, "Swapped $packageName1 (${placement1.sortIndex}) <-> $packageName2 (${placement2.sortIndex})")
+        val fromIndex = fromPlacement.sortIndex
+        val toIndex = toPlacement.sortIndex
+
+        if (fromIndex == toIndex) return
+
+        // Mutable listeye çevir
+        val updated = allPlacements.toMutableList()
+
+        // Sürüklenen uygulamayı listeden çıkar
+        updated.removeAll { it.packageName == fromPackage }
+
+        // Hedef uygulamanın güncel pozisyonunu bul (çıkardıktan sonra)
+        val targetPosition = updated.indexOfFirst { it.packageName == toPackage }
+        if (targetPosition == -1) return
+
+        // Sürüklenen uygulamayı doğru konuma ekle
+        val insertPosition = if (fromIndex < toIndex) {
+            // Soldan sağa / yukarıdan aşağıya sürükleme: hedefin arkasına
+            targetPosition + 1
+        } else {
+            // Sağdan sola / aşağıdan yukarıya sürükleme: hedefin önüne
+            targetPosition
         }
+
+        updated.add(insertPosition, AppPlacement(packageName = fromPackage, sortIndex = 0))
+
+        // Bottom bar ve grid ayrımını koruyarak yeniden indeksle
+        val reindexed = mutableListOf<AppPlacement>()
+        // İlk N tane bottom bar'da (mevcut bottom bar sayısını koru)
+        val originalBottomBarCount = allPlacements.count { it.sortIndex <= BOTTOM_BAR_MAX_INDEX }
+        
+        updated.forEachIndexed { index, placement ->
+            val newIndex = if (index < originalBottomBarCount) {
+                index // Bottom bar index'leri: 0, 1, 2, 3
+            } else {
+                GRID_START_INDEX + (index - originalBottomBarCount) // Grid index'leri: 4, 5, 6, ...
+            }
+            reindexed.add(placement.copy(sortIndex = newIndex))
+        }
+
+        dao.replaceAll(reindexed)
+        Log.d(TAG, "Moved $fromPackage from index $fromIndex to near $toPackage (index $toIndex)")
     }
 
 
