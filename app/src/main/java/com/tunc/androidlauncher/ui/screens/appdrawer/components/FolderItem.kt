@@ -28,14 +28,14 @@ fun FolderItem(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
-            .padding(bottom = 16.dp)
             .clickable { onClick() }
     ) {
         Box(
             modifier = Modifier
-                .size((iconSize + 20).dp)
-                .clip(RoundedCornerShape(18.dp))
+                .size((iconSize + 28).dp)
+                .clip(RoundedCornerShape(20.dp))
                 .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
@@ -51,7 +51,7 @@ fun FolderItem(
                 else -> {
                     Box(modifier = Modifier.fillMaxSize()) {
                         val gridApps = apps.take(4)
-                        val iconSizeSmall = (iconSize + 20) / 2 - 2
+                        val iconSizeSmall = (iconSize + 28) / 2 - 2
 
                         gridApps.forEachIndexed { index, app ->
                             val xOffset = if (index % 2 == 0) 2.dp else (iconSizeSmall + 4).dp
@@ -79,8 +79,6 @@ fun FolderItem(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = folderName,

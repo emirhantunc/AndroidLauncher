@@ -77,6 +77,7 @@ fun HomeScreen(
     val bottomBarApps by viewModel.bottomBarApps.collectAsStateWithLifecycle()
 
     var bottomBarBounds by remember { mutableStateOf<Rect?>(null) }
+    var bottomBarIconBounds by remember { mutableStateOf<Map<String, Rect>>(emptyMap()) }
     var gridBounds by remember { mutableStateOf<Rect?>(null) }
 
     var dragOverlayApp by remember { mutableStateOf<AppInfo?>(null) }
@@ -164,9 +165,17 @@ fun HomeScreen(
                         iconSize = iconSize.homeScreenSize,
                         isFullScreen = launcherMode == LauncherMode.HOME_GRID,
                         bottomBarBounds = bottomBarBounds,
-                        onAppDroppedToBottomBar = { app ->
+                        bottomBarIconBounds = bottomBarIconBounds,
+                        onAppDroppedToBottomBar = { app, targetPkg ->
                             coroutineScope.launch {
-                                placementManager.moveFromGridToBottomBar(app.packageName)
+                                if (bottomBarApps.size < 4) {
+                                    // 4'ten az uygulama varsa, hedef üzerine gelse bile her zaman boşluğa ekle
+                                    placementManager.moveFromGridToBottomBar(app.packageName)
+                                } else if (targetPkg != null) {
+                                    placementManager.swapGridAndBottomBar(app.packageName, targetPkg)
+                                } else {
+                                    placementManager.moveFromGridToBottomBar(app.packageName)
+                                }
                             }
                         },
                         onDragOverlayStart = { app, position, size ->
@@ -221,6 +230,9 @@ fun HomeScreen(
                     },
                     onDragOverlayEnd = {
                         dragOverlayApp = null
+                    },
+                    onIconBoundsChanged = { bounds ->
+                        bottomBarIconBounds = bounds
                     }
                 )
             } else {

@@ -203,14 +203,31 @@ class AppPlacementManager private constructor(context: Context) {
             val emptySlot = (0..BOTTOM_BAR_MAX_INDEX).first { it !in usedSlots }
             moveToBottomBar(packageName, emptySlot)
         } else {
-            // Dolu, son slot'taki ile yer değiştir
-            val lastSlotApp = bottomBarPlacements.maxByOrNull { it.sortIndex }
-            if (lastSlotApp != null) {
-                val slotIndex = lastSlotApp.sortIndex
-                moveToGrid(lastSlotApp.packageName)
-                moveToBottomBar(packageName, slotIndex)
-            }
+            // Dolu ise hiçbir şey yapma! Sadece swap özelliği ile yer değiştirebilirler.
+            Log.d(TAG, "Bottom bar dolu, ekleme iptal edildi.")
         }
+    }
+
+    /**
+     * Grid'deki bir uygulamayı, bottom bar'daki belirli bir uygulama ile yer değiştirir.
+     * Grid uygulaması bottom bar'a, bottom bar uygulaması grid'e taşınır.
+     */
+    suspend fun swapGridAndBottomBar(gridPackage: String, bottomBarPackage: String) {
+        val gridPlacement = dao.getPlacement(gridPackage) ?: return
+        val bottomBarPlacement = dao.getPlacement(bottomBarPackage) ?: return
+
+        val gridIndex = gridPlacement.sortIndex
+        val bottomBarIndex = bottomBarPlacement.sortIndex
+
+        // Her ikisini de sil
+        dao.deletePlacement(gridPackage)
+        dao.deletePlacement(bottomBarPackage)
+
+        // Yer değiştir: grid app -> bottom bar slot, bottom bar app -> grid position
+        dao.insertPlacement(AppPlacement(packageName = gridPackage, sortIndex = bottomBarIndex))
+        dao.insertPlacement(AppPlacement(packageName = bottomBarPackage, sortIndex = gridIndex))
+
+        Log.d(TAG, "Swapped $gridPackage (grid:$gridIndex) <-> $bottomBarPackage (bar:$bottomBarIndex)")
     }
 
 

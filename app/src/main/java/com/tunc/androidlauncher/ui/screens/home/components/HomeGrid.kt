@@ -88,7 +88,8 @@ fun HomeGrid(
     isFullScreen: Boolean = false,
     viewModel: HomeViewModel,
     bottomBarBounds: androidx.compose.ui.geometry.Rect? = null,
-    onAppDroppedToBottomBar: ((AppInfo) -> Unit)? = null,
+    bottomBarIconBounds: Map<String, androidx.compose.ui.geometry.Rect> = emptyMap(),
+    onAppDroppedToBottomBar: ((AppInfo, String?) -> Unit)? = null,
     onDragOverlayStart: ((AppInfo, Offset, Int) -> Unit)? = null,
     onDragOverlayMove: ((Offset) -> Unit)? = null,
     onDragOverlayEnd: (() -> Unit)? = null
@@ -161,9 +162,11 @@ fun HomeGrid(
     Box(modifier = modifier.fillMaxSize()) {
         if (isFullScreen) {
             val columns = 4
-            val itemHeightDp = iconSize + 60
+            // Actual item height: icon box (iconSize+28) + column spacing (12) + text (~16) + grid vertical spacing (16)
+            val itemHeightDp = iconSize + 28 + 12 + 16 + 16
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                val availableHeightDp = maxHeight.value - 8f
+                // Subtract vertical content padding (8dp top + 8dp bottom)
+                val availableHeightDp = maxHeight.value - 16f
                 val rowsPerPage = (availableHeightDp / itemHeightDp).toInt().coerceAtLeast(1)
                 val itemsPerPage = columns * rowsPerPage
                 val pageCount = ceil(combinedItems.size.toDouble() / itemsPerPage).toInt().coerceAtLeast(1)
@@ -379,17 +382,39 @@ fun HomeGrid(
                                                         var nearbyFolder = false
                                                         var foundFolderId: Long? = null
 
+                                                        // 1. Sürüklenen öğenin (dragged object) geçerli Rect'ini (kutusunu) bul
+                                                        // Metin alanını dahil etmemek ve simetri sağlamak için kare şeklinde (width = height) oluşturulur
+                                                        val draggedSize = appPositions[item.packageName]?.second ?: IntSize(150, 150)
+                                                        val iconPx = draggedSize.width.toFloat()
+                                                        val draggedRect = androidx.compose.ui.geometry.Rect(
+                                                            currentPos.x,
+                                                            currentPos.y,
+                                                            currentPos.x + iconPx,
+                                                            currentPos.y + iconPx
+                                                        )
+
                                                         // Önce klasör pozisyonlarını kontrol et
-                                                        var minFolderDistance = Float.MAX_VALUE
+                                                        var maxFolderOverlapArea = 0f
                                                         folderPositions.entries.forEach { (folderId, posSize) ->
                                                             val (folderPos, folderSize) = posSize
-                                                            val folderCenter = folderPos + Offset(folderSize.width / 2f, folderSize.height / 2f)
-                                                            val dragCenter = currentPos + Offset(folderSize.width / 2f, folderSize.height / 2f)
-                                                            val distance = (dragCenter - folderCenter).getDistance()
 
-                                                            if (distance < folderSize.width && distance < minFolderDistance) {
-                                                                minFolderDistance = distance
-                                                                foundFolderId = folderId
+                                                            // Klasör için toleranslı bir "hitbox" tanımlıyoruz.
+                                                            // Kare olması için dikeyde de folderSize.width kullanıyoruz.
+                                                            val hitPadding = 45f
+                                                            val folderRect = androidx.compose.ui.geometry.Rect(
+                                                                folderPos.x - hitPadding,
+                                                                folderPos.y - hitPadding,
+                                                                folderPos.x + folderSize.width + hitPadding,
+                                                                folderPos.y + folderSize.width + hitPadding
+                                                            )
+
+                                                            if (draggedRect.overlaps(folderRect)) {
+                                                                val intersection = draggedRect.intersect(folderRect)
+                                                                val area = intersection.width * intersection.height
+                                                                if (area > maxFolderOverlapArea) {
+                                                                    maxFolderOverlapArea = area
+                                                                    foundFolderId = folderId
+                                                                }
                                                             }
                                                         }
 
@@ -401,34 +426,38 @@ fun HomeGrid(
                                                         } else {
                                                             hoveredFolderId = null
 
-                                                            // Uygulama pozisyonlarını kontrol et
-                                                            var minDistance = Float.MAX_VALUE
+                                                            // Klasör bulunamadıysa Uygulama pozisyonlarını kontrol et
+                                                            var maxAppOverlapArea = 0f
                                                             var closestPkg: String? = null
-                                                            var closestSize: IntSize? = null
 
                                                             appPositions.entries.forEach { (packageName, posSize) ->
                                                                 if (packageName != item.packageName) {
                                                                     val (appPos, appSize) = posSize
+                                                                    
+                                                                    // Kare şeklinde dokunma toleransı (hitbox) tanımlıyoruz.
+                                                                    val hitPadding = 35f
+                                                                    val appRect = androidx.compose.ui.geometry.Rect(
+                                                                        appPos.x - hitPadding,
+                                                                        appPos.y - hitPadding,
+                                                                        appPos.x + appSize.width + hitPadding,
+                                                                        appPos.y + appSize.width + hitPadding
+                                                                    )
 
-                                                                    val appCenter = appPos + Offset(appSize.width / 2f, appSize.height / 2f)
-                                                                    val dragCenter = currentPos + Offset(appSize.width / 2f, appSize.height / 2f)
-
-                                                                    val distance = (dragCenter - appCenter).getDistance()
-
-                                                                    if (distance < appSize.width) {
-                                                                        if (distance < minDistance) {
-                                                                            minDistance = distance
+                                                                    if (draggedRect.overlaps(appRect)) {
+                                                                        val intersection = draggedRect.intersect(appRect)
+                                                                        val area = intersection.width * intersection.height
+                                                                        if (area > maxAppOverlapArea) {
+                                                                            maxAppOverlapArea = area
                                                                             closestPkg = packageName
-                                                                            closestSize = appSize
                                                                         }
                                                                     }
                                                                 }
                                                             }
 
-                                                            if (closestPkg != null && closestSize != null) {
+                                                            if (closestPkg != null) {
                                                                 foundHover = allApps.find { it.packageName == closestPkg }
-                                                                val threshold = closestSize!!.width * 0.2f
-                                                                nearbyFolder = minDistance < threshold
+                                                                // Kesişme varsa her türlü tetiklesin.
+                                                                nearbyFolder = true
                                                             }
 
                                                             hoveredApp = foundHover
@@ -445,7 +474,17 @@ fun HomeGrid(
                                                                     currentDragPosition.x <= (bounds.right + 50f)
                                                         } == true
                                                         if (droppedOnBottomBar && onAppDroppedToBottomBar != null) {
-                                                            onAppDroppedToBottomBar(item)
+                                                            var targetPkg: String? = null
+                                                            for ((pkg, rect) in bottomBarIconBounds) {
+                                                                if (currentDragPosition.x >= rect.left - 30f &&
+                                                                    currentDragPosition.x <= rect.right + 30f &&
+                                                                    currentDragPosition.y >= rect.top - 30f &&
+                                                                    currentDragPosition.y <= rect.bottom + 30f) {
+                                                                    targetPkg = pkg
+                                                                    break
+                                                                }
+                                                            }
+                                                            onAppDroppedToBottomBar(item, targetPkg)
                                                         } else if (targetFolderId != null) {
                                                             // Mevcut klasöre ekle
                                                             coroutineScope.launch {

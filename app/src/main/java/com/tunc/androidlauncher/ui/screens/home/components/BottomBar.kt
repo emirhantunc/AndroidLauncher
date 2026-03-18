@@ -53,7 +53,8 @@ fun BottomBar(
     onBoundsChanged: ((androidx.compose.ui.geometry.Rect) -> Unit)? = null,
     onDragOverlayStart: ((AppInfo, Offset, Int) -> Unit)? = null,
     onDragOverlayMove: ((Offset) -> Unit)? = null,
-    onDragOverlayEnd: (() -> Unit)? = null
+    onDragOverlayEnd: (() -> Unit)? = null,
+    onIconBoundsChanged: ((Map<String, androidx.compose.ui.geometry.Rect>) -> Unit)? = null
 ) {
     var draggedIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
@@ -62,11 +63,19 @@ fun BottomBar(
     var startExactPos by remember { mutableStateOf(Offset.Zero) }
 
     // Apps listesi değiştiğinde eski state'leri temizle
+    val iconBoundsMap = remember { mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>() }
+
+    LaunchedEffect(iconBoundsMap.toMap()) {
+        onIconBoundsChanged?.invoke(iconBoundsMap.toMap())
+    }
+
     LaunchedEffect(apps.map { it?.packageName }) {
         draggedIndex = null
         dragOffset = Offset.Zero
         hoveredIndex = null
         itemPositions.clear()
+        val currentPkgs = apps.mapNotNull { it?.packageName }.toSet()
+        iconBoundsMap.keys.retainAll(currentPkgs)
     }
 
     Row(
@@ -106,6 +115,9 @@ fun BottomBar(
                         isHovered = hoveredIndex == index,
                         onPositionChanged = { position ->
                             itemPositions[index] = position
+                        },
+                        onBoundsChanged = { rect ->
+                            iconBoundsMap[app.packageName] = rect
                         },
                         onDragStart = { exactPos ->
                             draggedIndex = index
@@ -179,6 +191,7 @@ private fun BottomIcon(
     dragOffset: Offset = Offset.Zero,
     isHovered: Boolean = false,
     onPositionChanged: (Offset) -> Unit = {},
+    onBoundsChanged: (androidx.compose.ui.geometry.Rect) -> Unit = {},
     onDragStart: (Offset) -> Unit = {},
     onDrag: (Offset) -> Unit = {},
     onDragEnd: () -> Unit = {}
@@ -196,7 +209,14 @@ private fun BottomIcon(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .onGloballyPositioned { coordinates ->
-                onPositionChanged(coordinates.positionInRoot())
+                val pos = coordinates.positionInRoot()
+                val size = coordinates.size
+                onPositionChanged(pos)
+                onBoundsChanged(
+                    androidx.compose.ui.geometry.Rect(
+                        pos.x, pos.y, pos.x + size.width, pos.y + size.height
+                    )
+                )
             }
             .offset {
                 IntOffset(
